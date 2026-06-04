@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { Prisma } from '@prisma/client'
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -19,11 +20,12 @@ export async function GET(req: NextRequest) {
   }
 
   const prefix = `#${engineer.engineerPrefix}`
+  // Use Prisma.raw for the integer position to avoid bigint type mismatch on Neon
+  const pos = Prisma.raw(String(prefix.length + 1))
 
-  // Find the numeric maximum suffix — avoids string sort issues beyond 9999
   const result = await prisma.$queryRaw<{ max: number | null }[]>`
     SELECT MAX(
-      CAST(SUBSTRING("ticketNumber" FROM ${prefix.length + 1}) AS INTEGER)
+      CAST(SUBSTRING("ticketNumber" FROM ${pos}) AS INTEGER)
     ) as max
     FROM "Ticket"
     WHERE "ticketNumber" LIKE ${prefix + '%'}

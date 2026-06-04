@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import NewTicketForm from './NewTicketForm'
 
@@ -20,8 +21,9 @@ export default async function NewTicketPage() {
   let defaultTicketNumber = '#000001'
   if (engineer?.engineerPrefix) {
     const prefix = `#${engineer.engineerPrefix}`
+    const pos = Prisma.raw(String(prefix.length + 1))
     const result = await prisma.$queryRaw<{ max: number | null }[]>`
-      SELECT MAX(CAST(SUBSTRING("ticketNumber" FROM ${prefix.length + 1}) AS INTEGER)) as max
+      SELECT MAX(CAST(SUBSTRING("ticketNumber" FROM ${pos}) AS INTEGER)) as max
       FROM "Ticket"
       WHERE "ticketNumber" LIKE ${prefix + '%'}
       AND "ticketNumber" ~ ${'^' + prefix.replace('#', '\\#') + '[0-9]+$'}
