@@ -31,7 +31,7 @@ function Badge({ label, style }: { label: string; style: { bg: string; color: st
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; issueTopic?: string; subcontractor?: string; partnerUnknown?: string; mine?: string; page?: string }>
+  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; issueTopic?: string; subcontractor?: string; partnerUnknown?: string; mine?: string; sort?: string; dir?: string; page?: string }>
 }) {
   const params = await searchParams
   const session = await auth()
@@ -69,7 +69,9 @@ export default async function TicketsPage({
     prisma.ticket.findMany({
       where,
       include: { engineer: { select: { name: true } } },
-      orderBy: { startDate: 'desc' },
+      orderBy: params.sort === 'ticketNumber'
+        ? { ticketNumber: (params.dir === 'asc' ? 'asc' : 'desc') }
+        : { startDate: (params.dir === 'asc' ? 'asc' : 'desc') },
       skip,
       take: perPage,
     }),
@@ -196,12 +198,30 @@ export default async function TicketsPage({
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              {['Ticket', 'Engineer', 'Partner', 'Issue Topic', 'Status', 'Urgency', 'Start Date'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
-                  style={{ color: 'var(--muted-foreground)', background: 'var(--muted)' }}>
-                  {h}
-                </th>
-              ))}
+              {[
+                { label: 'Ticket', key: 'ticketNumber' },
+                { label: 'Engineer', key: null },
+                { label: 'Partner', key: null },
+                { label: 'Issue Topic', key: null },
+                { label: 'Status', key: null },
+                { label: 'Urgency', key: null },
+                { label: 'Start Date', key: 'startDate' },
+              ].map(({ label, key }) => {
+                const isActive = (params.sort ?? 'startDate') === (key ?? '')
+                const nextDir = isActive && params.dir !== 'asc' ? 'asc' : 'desc'
+                const arrow = isActive ? (params.dir === 'asc' ? ' ↑' : ' ↓') : ''
+                return (
+                  <th key={label} className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                    style={{ color: isActive ? 'var(--primary)' : 'var(--muted-foreground)', background: 'var(--muted)', whiteSpace: 'nowrap', cursor: key ? 'pointer' : 'default' }}>
+                    {key ? (
+                      <Link href={`/tickets?${new URLSearchParams({ ...Object.fromEntries(Object.entries(params).filter(([,v]) => v) as [string,string][]), sort: key, dir: nextDir, page: '1' })}`}
+                        style={{ textDecoration: 'none', color: 'inherit' }}>
+                        {label}{arrow}
+                      </Link>
+                    ) : label}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
