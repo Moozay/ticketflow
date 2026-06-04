@@ -23,6 +23,16 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl)
   }
 
+  // EXTERN users can only access /dashboard and /dashboard/partners/*
+  const role = (session.user as any)?.role
+  if (role === 'EXTERN') {
+    const allowed = nextUrl.pathname === '/dashboard' ||
+      nextUrl.pathname.startsWith('/dashboard/partners')
+    if (!allowed) {
+      return NextResponse.redirect(new URL('/dashboard', nextUrl))
+    }
+  }
+
   return NextResponse.next()
 })
 

@@ -58,6 +58,7 @@ interface Ticket {
   canUserSolve: string; description: string | null
 }
 interface Props {
+  isExtern?: boolean
   partnerName: string
   stats: {
     totalTickets: number; resolvedCount: number; escalationCount: number
@@ -156,7 +157,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PartnerDetailClient({
-  partnerName, stats, byIssueTopic, byStatus, byUrgency,
+  isExtern, partnerName, stats, byIssueTopic, byStatus, byUrgency,
   byCanUserSolve, byDocStatus, monthlyTrend, tickets,
 }: Props) {
   const resolutionRate = stats.totalTickets ? Math.round(stats.resolvedCount / stats.totalTickets * 100) : 0
@@ -384,9 +385,15 @@ export default function PartnerDetailClient({
                       style={{ borderBottom: '1px solid var(--border)', background: i % 2 === 1 ? 'var(--muted)' : 'transparent' }}
                     >
                       <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
-                        <Link href={`/tickets/${t.id}`} style={{ fontWeight: 700, color: 'var(--primary)', textDecoration: 'none', fontFamily: 'monospace', fontSize: '12px' }}>
-                          {t.ticketNumber}
-                        </Link>
+                        {isExtern ? (
+                          <span style={{ fontWeight: 700, color: 'var(--foreground)', fontFamily: 'monospace', fontSize: '12px' }}>
+                            {t.ticketNumber}
+                          </span>
+                        ) : (
+                          <Link href={`/tickets/${t.id}`} style={{ fontWeight: 700, color: 'var(--primary)', textDecoration: 'none', fontFamily: 'monospace', fontSize: '12px' }}>
+                            {t.ticketNumber}
+                          </Link>
+                        )}
                       </td>
                       <td style={{ padding: '10px 14px', color: 'var(--muted-foreground)', whiteSpace: 'nowrap', fontSize: '12px' }}>
                         {formatDate(t.startDate)}

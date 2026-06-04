@@ -166,6 +166,13 @@ async function main() {
 
   console.log(`✓ ${created} tickets seeded, ${skipped} skipped`)
 
+  // Remove placeholder/test tickets that should not exist
+  const INVALID_TICKET_NUMBERS = ['000000', '00000', '111111', '1000']
+  const cleaned = await prisma.ticket.deleteMany({
+    where: { ticketNumber: { in: INVALID_TICKET_NUMBERS } },
+  })
+  if (cleaned.count > 0) console.log(`🗑️  Removed ${cleaned.count} placeholder tickets`)
+
   // ── 4. Seed IssueTopic, SolutionTopic, PopZone from Excel ────────────────
   const issueTopicNames = [...new Set(rows.map((r: any) => r['IssueTopic']).filter(Boolean))] as string[]
   for (const name of issueTopicNames.sort()) {

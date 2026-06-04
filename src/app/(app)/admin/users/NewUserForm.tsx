@@ -137,6 +137,7 @@ export default function NewUserForm() {
                 <select style={inputStyle} value={form.role} onChange={e => set('role', e.target.value)}>
                   <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
+                  <option value="EXTERN">Extern</option>
                 </select>
               </div>
               <div>

@@ -75,6 +75,7 @@ interface SidebarProps {
 export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const isAdmin = user.role === 'ADMIN'
+  const isExtern = user.role === 'EXTERN'
 
   return (
     <aside className="flex flex-col w-56 shrink-0 h-screen sticky top-0" style={{ background: 'var(--sidebar-bg)' }}>
@@ -97,7 +98,7 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {nav.map(item => {
+        {nav.filter(item => !isExtern || item.href === '/dashboard').map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link key={item.href} href={item.href}

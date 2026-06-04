@@ -37,7 +37,6 @@ interface Props {
   byStatus: { name: string; value: number }[]
   byUrgency: { name: string; value: number }[]
   byCanUserSolve: { name: string; value: number }[]
-  byDocStatus: { name: string; value: number }[]
   byIssueType: { name: string; value: number }[]
   byEngineer: { name: string; value: number }[]
   monthlyTrend: { month: string; total: number; resolved: number }[]
@@ -144,7 +143,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function DashboardClient({
   stats, byIssueTopic, byPartner, partnerSummary,
-  byStatus, byUrgency, byCanUserSolve, byDocStatus, byIssueType,
+  byStatus, byUrgency, byCanUserSolve, byIssueType,
   byEngineer, monthlyTrend,
 }: Props) {
   const router = useRouter()
@@ -161,10 +160,6 @@ export default function DashboardClient({
   }
   const CAN_FIX_COLORS: Record<string, string> = {
     'Yes': C.darkest, 'No': C.gold,
-  }
-  const DOC_COLORS: Record<string, string> = {
-    'Already Exists': C.darkest, 'Created': C.darker, 'Will Create': C.deep,
-    'Not Needed': C.mid,
   }
 
   const axisStyle = { fontSize: 11, fill: 'var(--muted-foreground)' }
@@ -437,39 +432,6 @@ export default function DashboardClient({
         </div>
       </Section>
 
-      {/* ── 5. Documentation ── */}
-      <Section
-        title="Documentation & Knowledge Gaps"
-        description="Are solutions documented? Tickets with missing or unknown documentation represent gaps that slow future resolution."
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <ChartCard title="Documentation Status" sub="For each resolved ticket — is a solution documented?">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart layout="vertical" data={byDocStatus} margin={{ left: 4, right: 60, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={axisStyle} width={110} axisLine={false} tickLine={false} />
-                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {byDocStatus.map(d => <Cell key={d.name} fill={DOC_COLORS[d.name] ?? C.gold} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard title="Engineer Workload" sub="Tickets handled per engineer">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart layout="vertical" data={byEngineer} margin={{ left: 4, right: 60, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={axisStyle} width={120} axisLine={false} tickLine={false} />
-                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {byEngineer.map((_, i) => <Cell key={i} fill={BROWN_SCALE[i % BROWN_SCALE.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-      </Section>
 
     </div>
   )

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/lib/auth'
 import { notFound } from 'next/navigation'
 import PartnerDetailClient from './PartnerDetailClient'
 
@@ -9,6 +10,8 @@ export default async function PartnerDetailPage({
 }: {
   params: Promise<{ name: string }>
 }) {
+  const session = await auth()
+  const userRole = (session?.user as any)?.role
   const { name } = await params
   const partnerName = decodeURIComponent(name)
 
@@ -77,6 +80,7 @@ export default async function PartnerDetailPage({
 
   return (
     <PartnerDetailClient
+      isExtern={userRole === 'EXTERN'}
       partnerName={partnerName}
       stats={{
         totalTickets, resolvedCount, escalationCount, selfSolvableCount,

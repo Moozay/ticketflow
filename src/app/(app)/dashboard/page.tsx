@@ -19,7 +19,6 @@ export default async function DashboardPage() {
     byStatus,
     byUrgency,
     byCanUserSolve,
-    byDocStatus,
     byIssueType,
     byEngineer,
     monthlyRaw,
@@ -38,7 +37,6 @@ export default async function DashboardPage() {
     prisma.ticket.groupBy({ by: ['status'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['urgency'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['canUserSolve'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
-    prisma.ticket.groupBy({ by: ['documentationStatus'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['issueType'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['engineerId'], where: { isValidTicket: true, archivedAt: null }, _count: true, orderBy: { _count: { engineerId: 'desc' } } }),
     prisma.$queryRaw<MonthRow[]>`
@@ -95,10 +93,6 @@ export default async function DashboardPage() {
   const URGENCY_ORDER = ['High', 'Medium', 'Low', 'Not Specified']
   const URGENCY_LABELS: Record<string, string> = { HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }
   const CAN_FIX_LABELS: Record<string, string> = { YES: 'Yes', NO: 'No' }
-  const DOC_LABELS: Record<string, string> = {
-    ALREADY_EXISTS: 'Already Exists', NOT_NEEDED: 'Not Needed',
-    WILL_CREATE: 'Will Create', CREATED: 'Created',
-  }
 
   return (
     <DashboardClient
@@ -115,7 +109,6 @@ export default async function DashboardPage() {
         .map(d => ({ name: URGENCY_LABELS[d.urgency] ?? d.urgency, value: d._count }))
         .sort((a, b) => URGENCY_ORDER.indexOf(a.name) - URGENCY_ORDER.indexOf(b.name))}
       byCanUserSolve={byCanUserSolve.map(d => ({ name: CAN_FIX_LABELS[d.canUserSolve] ?? d.canUserSolve, value: d._count }))}
-      byDocStatus={byDocStatus.map(d => ({ name: DOC_LABELS[d.documentationStatus] ?? d.documentationStatus, value: d._count }))}
       byIssueType={byIssueType.map(d => ({ name: d.issueType === 'MARLIN_ISSUE' ? 'Marlin' : 'Comsof', value: d._count }))}
       byEngineer={byEngineer.map(d => ({ name: engineerMap[d.engineerId] ?? d.engineerId, value: d._count }))}
       monthlyTrend={monthlyRaw.map(r => ({ month: r.month, total: Number(r.total), resolved: Number(r.resolved) }))}
