@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  ENGINEER
+}
+
+enum TicketStatus {
+  NOT_YET_STARTED
+  IN_PROGRESS
+  ON_HOLD
+  DONE
+  DONE_BY_L2
+  ESCALATED_TO_L2
+}
+
+enum Urgency {
+  NOT_SPECIFIED
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Category {
+  CATEGORY_1
+  CATEGORY_2
+  CATEGORY_3
+}
+
+enum IssueType {
+  MARLIN_ISSUE
+  COMSOF_ISSUE
+}
+
+enum CanUserSolve {
+  YES
+  NO
+  UNKNOWN
+  PARTIALLY
+}
+
+enum DocumentationStatus {
+  ALREADY_EXISTS
+  NOT_NEEDED
+  WILL_CREATE
+  CREATED
+  UNKNOWN
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  password       String
+  role           Role      @default(ENGINEER)
+  engineerPrefix Int?      @unique
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tickets        Ticket[]
+  solutions      Solution[]
+}
+
+model Ticket {
+  id                  String              @id @default(cuid())
+  ticketNumber        String              @unique
+  startDate           DateTime
+  estimatedEnd        DateTime?
+  actualEnd           DateTime?
+  category            Category
+  issueType           IssueType
+  urgency             Urgency             @default(NOT_SPECIFIED)
+  status              TicketStatus        @default(NOT_YET_STARTED)
+  popZone             String
+  designPartner       String
+  subcontractor       String
+  canUserSolve        CanUserSolve        @default(NO)
+  documentationStatus DocumentationStatus @default(UNKNOWN)
+  solutionId          String?
+  description         String?             @db.Text
+  isValidTicket       Boolean             @default(true)
+  isOutlier           Boolean             @default(false)
+
+  issueTopic          String?
+  solutionTopic       String?
+  engineerId          String
+  archivedAt          DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  engineer            User                @relation(fields: [engineerId], references: [id])
+  solution            Solution?           @relation(fields: [solutionId], references: [id])
+  documentations      Documentation[]     @relation("TicketDocLinks")
+  attachments         Attachment[]
+}
+
+model Solution {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  category    String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  tickets     Ticket[]
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  ticketId  String
+  fileName  String
+  fileUrl   String
+  fileSize  Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+model Documentation {
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  section     String?
+  description String?  @db.Text
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  linkedTickets Ticket[] @relation("TicketDocLinks")
+}
+
+model IssueTopic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+}
+
+model PopZone {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Partner {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model SolutionTopic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+}
