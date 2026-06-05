@@ -45,7 +45,12 @@ export default async function TicketsPage({
   const hasAnyFilter = !!(params.q || params.status || params.partner || params.urgency ||
     params.canUserSolve || params.engineerFilter || params.issueTopic ||
     params.subcontractor || params.partnerUnknown || params.sort)
-  const effectiveEngineerId = (!isAdmin && !params.engineerFilter) ? engineerId : params.engineerFilter
+  // 'all' = explicit "show all engineers"; undefined/absent = default to own for engineers
+  const effectiveEngineerId = params.engineerFilter === 'all'
+    ? undefined
+    : (!isAdmin && !params.engineerFilter)
+      ? engineerId
+      : params.engineerFilter || undefined
 
   const page = parseInt(params.page ?? '1')
   const perPage = 30
@@ -187,7 +192,7 @@ export default async function TicketsPage({
         <select name="engineerFilter" defaultValue={effectiveEngineerId ?? ''}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">All engineers</option>
+          <option value="all">All engineers</option>
           {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
         <button type="submit" className="px-4 py-2 rounded-lg text-sm font-medium"
