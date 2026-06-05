@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import TicketsNavLink from '@/components/layout/TicketsNavLink'
 
 const nav = [
   {
@@ -99,6 +100,10 @@ export default function Sidebar({ user }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {nav.filter(item => !isExtern || item.href === '/dashboard').map(item => {
+          // Tickets link uses smart component that restores last filter
+          if (item.href === '/tickets') {
+            return <TicketsNavLink key="/tickets" icon={item.icon} isExtern={isExtern} />
+          }
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link key={item.href} href={item.href}

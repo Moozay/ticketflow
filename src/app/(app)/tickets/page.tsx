@@ -2,6 +2,8 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { Suspense } from 'react'
+import TicketsFilterSaver from './TicketsFilterSaver'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   DONE:             { bg: '#f0fdf4', color: '#16a34a' },
@@ -36,13 +38,19 @@ export default async function TicketsPage({
   const params = await searchParams
   const session = await auth()
   const engineerId = (session?.user as any)?.id
+  const userRole = (session?.user as any)?.role
+  const isAdmin = userRole === 'ADMIN'
+
+  // If engineer and no engineerFilter set, default to their own tickets
+  const hasAnyFilter = !!(params.q || params.status || params.partner || params.urgency ||
+    params.canUserSolve || params.engineerFilter || params.issueTopic ||
+    params.subcontractor || params.partnerUnknown || params.sort)
+  const effectiveEngineerId = (!isAdmin && !params.engineerFilter) ? engineerId : params.engineerFilter
 
   const page = parseInt(params.page ?? '1')
   const perPage = 30
   const skip = (page - 1) * perPage
 
-  const userRole = (session?.user as any)?.role
-  const isAdmin = userRole === 'ADMIN'
   const base = { isValidTicket: true, archivedAt: null }
   const myBase = isAdmin ? base : { ...base, engineerId }
   // When a correction filter is active and user is engineer, scope to their own tickets
@@ -60,7 +68,7 @@ export default async function TicketsPage({
   if (params.partner) where.designPartner = params.partner
   if (params.urgency) where.urgency = params.urgency
   if (params.canUserSolve) where.canUserSolve = params.canUserSolve
-  if (params.engineerFilter) where.engineerId = params.engineerFilter
+  if (effectiveEngineerId) where.engineerId = effectiveEngineerId
   if (params.issueTopic) where.issueTopic = { contains: params.issueTopic, mode: 'insensitive' }
   if (params.subcontractor) where.subcontractor = params.subcontractor
   if (params.partnerUnknown) where.OR = [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }]
@@ -176,7 +184,7 @@ export default async function TicketsPage({
           <option value="">All issue topics</option>
           {issueTopics.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
         </select>
-        <select name="engineerFilter" defaultValue={params.engineerFilter ?? ''}
+        <select name="engineerFilter" defaultValue={effectiveEngineerId ?? ''}
           className="px-3 py-2 rounded-lg text-sm outline-none"
           style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
           <option value="">All engineers</option>
@@ -186,8 +194,9 @@ export default async function TicketsPage({
           style={{ background: 'var(--secondary)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>
           Filter
         </button>
-        {(params.q || params.status || params.partner || params.urgency || params.canUserSolve || params.engineerFilter || params.issueTopic || params.subcontractor || params.partnerUnknown) && (
-          <Link href="/tickets" className="px-3 py-2 rounded-lg text-sm" style={{ color: 'var(--muted-foreground)' }}>
+        {hasAnyFilter && (
+          <Link href={isAdmin ? '/tickets' : `/tickets?engineerFilter=${engineerId}`}
+            className="px-3 py-2 rounded-lg text-sm" style={{ color: 'var(--muted-foreground)' }}>
             Clear
           </Link>
         )}
@@ -291,6 +300,10 @@ export default async function TicketsPage({
           </div>
         </div>
       )}
+
+      <Suspense fallback={null}>
+        <TicketsFilterSaver isAdmin={isAdmin} engineerId={engineerId} />
+      </Suspense>
     </div>
   )
 }

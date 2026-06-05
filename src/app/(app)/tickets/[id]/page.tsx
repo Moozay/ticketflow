@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import TicketEditForm from './TicketEditForm'
 import ArchiveButton from './ArchiveButton'
+import BackToTickets from './BackToTickets'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   DONE:             { bg: '#f0fdf4', color: '#16a34a' },
@@ -108,22 +108,7 @@ export default async function TicketDetailPage({
 
       {/* Back + header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <Link
-          href="/tickets"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '14px',
-            color: 'var(--muted-foreground)',
-            textDecoration: 'none',
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          All tickets
-        </Link>
+        <BackToTickets />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Badge label={ticket.status} style={statusStyle} />

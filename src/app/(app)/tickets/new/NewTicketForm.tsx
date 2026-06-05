@@ -197,8 +197,35 @@ export default function NewTicketForm({ defaultTicketNumber, engineerId, documen
   }
   const [savedTicket, setSavedTicket] = useState<{ id: string; number: string; engineerName: string } | null>(null)
   const [copied, setCopied] = useState(false)
-
   const today = new Date().toISOString().split('T')[0]
+
+  const [estimatedEnd, setEstimatedEnd] = useState(() => {
+    // Default to 3 working days from today
+    const d = new Date()
+    let added = 0
+    while (added < 3) {
+      d.setDate(d.getDate() + 1)
+      const day = d.getDay()
+      if (day !== 0 && day !== 6) added++
+    }
+    return d.toISOString().split('T')[0]
+  })
+
+  function addWorkingDays(dateStr: string, days: number): string {
+    const d = new Date(dateStr)
+    let added = 0
+    while (added < days) {
+      d.setDate(d.getDate() + 1)
+      const day = d.getDay()
+      if (day !== 0 && day !== 6) added++
+    }
+    return d.toISOString().split('T')[0]
+  }
+
+  function handleStartDateChange(value: string) {
+    if (value) setEstimatedEnd(addWorkingDays(value, 3))
+    else setEstimatedEnd('')
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -310,7 +337,8 @@ LLD Support Team`
             </Field>
 
             <Field label="Start Date" required>
-              <Input type="date" name="startDate" defaultValue={today} required />
+              <Input type="date" name="startDate" defaultValue={today} required
+                onChange={e => handleStartDateChange(e.target.value)} />
             </Field>
 
             <Field label="Engineer" required>
@@ -358,7 +386,8 @@ LLD Support Team`
             </Field>
 
             <Field label="Estimated End">
-              <Input type="date" name="estimatedEnd" />
+              <Input type="date" name="estimatedEnd" value={estimatedEnd}
+                onChange={e => setEstimatedEnd((e as any).target.value)} />
             </Field>
 
             <Field label="Actual End">
