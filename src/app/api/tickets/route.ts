@@ -76,6 +76,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  if ((status === 'DONE' || status === 'DONE_BY_L2') && !issueTopic) {
+    return NextResponse.json({ error: 'Issue Topic is required when status is Done.' }, { status: 400 })
+  }
+  if ((status === 'DONE' || status === 'DONE_BY_L2') && !actualEnd) {
+    return NextResponse.json({ error: 'Actual End date is required when status is Done.' }, { status: 400 })
+  }
+  if ((status === 'DONE' || status === 'DONE_BY_L2') && (!documentationStatus || documentationStatus === 'UNKNOWN')) {
+    return NextResponse.json({ error: 'Documentation Status is required when status is Done.' }, { status: 400 })
+  }
+  if (status === 'ON_HOLD' && !description?.trim()) {
+    return NextResponse.json({ error: 'Description is required to justify why the ticket is On Hold.' }, { status: 400 })
+  }
+
   if (status === 'ESCALATED_TO_L2' && !description?.includes('atlassian.net')) {
     return NextResponse.json({ error: 'A Jira ticket link (atlassian.net) is required in the description when escalating to L2.' }, { status: 400 })
   }

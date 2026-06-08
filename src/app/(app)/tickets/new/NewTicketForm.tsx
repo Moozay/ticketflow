@@ -182,6 +182,7 @@ export default function NewTicketForm({ defaultTicketNumber, engineerId, documen
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [fetchingNumber, setFetchingNumber] = useState(false)
+  const [selectedStatus, setSelectedStatus] = useState('NOT_YET_STARTED')
 
   async function handleEngineerChange(id: string) {
     setFetchingNumber(true)
@@ -229,12 +230,20 @@ export default function NewTicketForm({ defaultTicketNumber, engineerId, documen
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
     setError('')
     const fd = new FormData(e.currentTarget)
     const body = Object.fromEntries(fd.entries())
     body.ticketNumber = ticketNumber
 
+    const isDone = body.status === 'DONE' || body.status === 'DONE_BY_L2'
+    const isOnHold = body.status === 'ON_HOLD'
+
+    if (isDone && !body.issueTopic) { setError('Issue Topic is required when status is Done.'); return }
+    if (isDone && !body.actualEnd) { setError('Actual End date is required when status is Done.'); return }
+    if (isDone && (!body.documentationStatus || body.documentationStatus === 'UNKNOWN')) { setError('Documentation Status is required when status is Done.'); return }
+    if (isOnHold && !(body.description as string)?.trim()) { setError('Description is required to justify why the ticket is On Hold.'); return }
+
+    setLoading(true)
     try {
       const res = await fetch('/api/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error ?? 'Failed') }
@@ -375,7 +384,8 @@ LLD Support Team`
             </Field>
 
             <Field label="Status" required>
-              <Select name="status" defaultValue="NOT_YET_STARTED" required>
+              <Select name="status" defaultValue="NOT_YET_STARTED" required
+                onChange={e => setSelectedStatus((e as any).target.value)}>
                 <option value="NOT_YET_STARTED">Not yet started</option>
                 <option value="IN_PROGRESS">In progress</option>
                 <option value="ON_HOLD">On hold</option>
@@ -390,8 +400,11 @@ LLD Support Team`
                 onChange={e => setEstimatedEnd((e as any).target.value)} />
             </Field>
 
-            <Field label="Actual End">
+            <Field label={`Actual End${(selectedStatus === 'DONE' || selectedStatus === 'DONE_BY_L2') ? ' *' : ''}`}>
               <Input type="date" name="actualEnd" />
+              {(selectedStatus === 'DONE' || selectedStatus === 'DONE_BY_L2') && (
+                <p style={{ fontSize: '11px', color: 'var(--destructive)', marginTop: '3px' }}>Required when status is Done</p>
+              )}
             </Field>
           </div>
         </div>
@@ -430,8 +443,11 @@ LLD Support Team`
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Issue Topic">
+            <Field label={`Issue Topic${(selectedStatus === 'DONE' || selectedStatus === 'DONE_BY_L2') ? ' *' : ''}`}>
               <MultiSelect name="issueTopic" options={issueTopicOpts} placeholder="Select issue topics…" />
+              {(selectedStatus === 'DONE' || selectedStatus === 'DONE_BY_L2') && (
+                <p style={{ fontSize: '11px', color: 'var(--destructive)', marginTop: '3px' }}>Required when status is Done</p>
+              )}
             </Field>
 
             <Field label="Solution Topic">
@@ -440,7 +456,10 @@ LLD Support Team`
 
             <div className="col-span-2">
               <Field label="Description" required>
-                <Textarea name="description" required placeholder="Describe the issue in detail…" />
+                <Textarea name="description" required placeholder={selectedStatus === 'ON_HOLD' ? 'Required: explain why this ticket is on hold…' : 'Describe the issue in detail…'} />
+                {selectedStatus === 'ON_HOLD' && (
+                  <p style={{ fontSize: '11px', color: 'var(--destructive)', marginTop: '3px' }}>Required to justify why the ticket is On Hold</p>
+                )}
               </Field>
             </div>
 
@@ -451,7 +470,7 @@ LLD Support Team`
               </Select>
             </Field>
 
-            <Field label="Documentation">
+            <Field label={`Documentation${(selectedStatus === 'DONE' || selectedStatus === 'DONE_BY_L2') ? ' *' : ''}`}>
               <Select name="documentationStatus" defaultValue="ALREADY_EXISTS">
                 <option value="ALREADY_EXISTS">Already exists</option>
                 <option value="NOT_NEEDED">Not needed</option>

@@ -53,6 +53,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
 
+  if (data.status === 'DONE' || data.status === 'DONE_BY_L2') {
+    const current = await prisma.ticket.findUnique({ where: { id }, select: { issueTopic: true, actualEnd: true, documentationStatus: true } })
+    const issueTopic = (data.issueTopic ?? current?.issueTopic) as string | null
+    const actualEnd = data.actualEnd ?? current?.actualEnd
+    const docStatus = (data.documentationStatus ?? current?.documentationStatus) as string | null
+    if (!issueTopic) return NextResponse.json({ error: 'Issue Topic is required when status is Done.' }, { status: 400 })
+    if (!actualEnd) return NextResponse.json({ error: 'Actual End date is required when status is Done.' }, { status: 400 })
+    if (!docStatus || docStatus === 'UNKNOWN') return NextResponse.json({ error: 'Documentation Status is required when status is Done.' }, { status: 400 })
+  }
+
+  if (data.status === 'ON_HOLD') {
+    const current = await prisma.ticket.findUnique({ where: { id }, select: { description: true } })
+    const description = (data.description ?? current?.description) as string | null
+    if (!description?.trim()) return NextResponse.json({ error: 'Description is required to justify why the ticket is On Hold.' }, { status: 400 })
+  }
+
   if (data.status === 'ESCALATED_TO_L2') {
     const description = data.description as string | undefined
     const existing = description == null
