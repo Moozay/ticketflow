@@ -56,3 +56,22 @@ body {
   animation: skeleton-shimmer 1.4s infinite linear;
   border-radius: 6px;
 }
+
+/* ── Print / Export as PDF ────────────────────────────────────────────────── */
+@media print {
+  /* Hide chrome that shouldn't appear in the printed dashboard */
+  aside,
+  .no-print { display: none !important; }
+
+  /* Let the main content fill the page instead of scrolling in a flex box */
+  main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+
+  /* Keep cards/charts from being split across pages where possible */
+  .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
+
+  @page { margin: 12mm; }
+}
