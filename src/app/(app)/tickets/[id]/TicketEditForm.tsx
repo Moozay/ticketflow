@@ -244,6 +244,13 @@ export default function TicketEditForm({ ticket, documentations, engineers, popZ
           solutionTopic: selectedSolutionTopics.join(', ') || undefined,
           documentationIds: selectedDocumentations,
         }
+
+        const isDone = form.status === 'DONE' || form.status === 'DONE_BY_L2'
+        const isOnHold = form.status === 'ON_HOLD'
+        if (isDone && !body.issueTopic) { setError('Issue Topic is required when status is Done.'); return }
+        if (isDone && !body.actualEnd) { setError('Actual End date is required when status is Done.'); return }
+        if (isDone && (!body.documentationStatus || body.documentationStatus === 'UNKNOWN')) { setError('Documentation Status is required when status is Done.'); return }
+        if (isOnHold && !form.description?.trim()) { setError('Description is required to justify why the ticket is On Hold.'); return }
         const res = await fetch(`/api/tickets/${ticket.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -349,8 +356,11 @@ export default function TicketEditForm({ ticket, documentations, engineers, popZ
                 <FormField label="Estimated End">
                   <input type="date" style={inputStyle} value={form.estimatedEnd} onChange={e => set('estimatedEnd', e.target.value)} />
                 </FormField>
-                <FormField label="Actual End">
+                <FormField label={(form.status === 'DONE' || form.status === 'DONE_BY_L2') ? 'Actual End *' : 'Actual End'}>
                   <input type="date" style={inputStyle} value={form.actualEnd} onChange={e => set('actualEnd', e.target.value)} />
+                  {(form.status === 'DONE' || form.status === 'DONE_BY_L2') && !form.actualEnd && (
+                    <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '3px' }}>Required when status is Done</p>
+                  )}
                 </FormField>
                 <FormField label="Status">
                   <select style={inputStyle} value={form.status} onChange={e => set('status', e.target.value)}>
@@ -407,14 +417,14 @@ export default function TicketEditForm({ ticket, documentations, engineers, popZ
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Documentation Status">
+                <FormField label={(form.status === 'DONE' || form.status === 'DONE_BY_L2') ? 'Documentation Status *' : 'Documentation Status'}>
                   <select style={inputStyle} value={form.documentationStatus} onChange={e => set('documentationStatus', e.target.value)}>
                     {['ALREADY_EXISTS','NOT_NEEDED','WILL_CREATE','CREATED'].map(v => (
                       <option key={v} value={v}>{v.replace(/_/g, ' ')}</option>
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Issue Topic">
+                <FormField label={(form.status === 'DONE' || form.status === 'DONE_BY_L2') ? 'Issue Topic *' : 'Issue Topic'}>
                   <SearchableMultiSelect
                     value={selectedIssueTopics}
                     onChange={setSelectedIssueTopics}
@@ -443,13 +453,17 @@ export default function TicketEditForm({ ticket, documentations, engineers, popZ
                 </FormField>
               </div>
 
-              <FormField label="Description">
+              <FormField label={form.status === 'ON_HOLD' ? 'Description *' : 'Description'}>
                 <textarea
                   rows={5}
                   style={{ ...inputStyle, resize: 'vertical' }}
                   value={form.description}
+                  placeholder={form.status === 'ON_HOLD' ? 'Required: explain why this ticket is on hold…' : ''}
                   onChange={e => set('description', e.target.value)}
                 />
+                {form.status === 'ON_HOLD' && !form.description?.trim() && (
+                  <p style={{ fontSize: '11px', color: '#dc2626', marginTop: '3px' }}>Required to justify why the ticket is On Hold</p>
+                )}
                 {form.status === 'ESCALATED_TO_L2' && !form.description?.includes('atlassian.net') && (
                   <p style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px' }}>
                     A Jira link (atlassian.net) is required when escalating to L2.
