@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   AreaChart, Area, CartesianGrid,
@@ -20,6 +21,26 @@ const C = {
 }
 
 const BROWN_SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#c49840', '#4a3a1c']
+
+const QUICK_FILTERS = [
+  { key: 'month',  label: 'This Month' },
+  { key: 'year',   label: 'This Year'  },
+  { key: 'last3m', label: 'Last 3M'   },
+  { key: 'last6m', label: 'Last 6M'   },
+]
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const fmtDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+function getQuickRange(key: string) {
+  const now = new Date()
+  const to = fmtDate(now)
+  if (key === 'month')  return { from: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`, to }
+  if (key === 'year')   return { from: `${now.getFullYear()}-01-01`, to }
+  if (key === 'last3m') { const d = new Date(now); d.setMonth(d.getMonth() - 3); return { from: fmtDate(d), to } }
+  if (key === 'last6m') { const d = new Date(now); d.setMonth(d.getMonth() - 6); return { from: fmtDate(d), to } }
+  return { from: `${now.getFullYear()}-01-01`, to }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerSummary {
@@ -142,12 +163,39 @@ const TrendTooltip = ({ active, payload, label }: any) => {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function DashboardClient({
-  stats, byIssueTopic, byPartner, partnerSummary,
-  byStatus, byUrgency, byCanUserSolve, byIssueType,
-  byEngineer, monthlyTrend,
-}: Props) {
+export default function DashboardClient(initial: Props) {
   const router = useRouter()
+
+  const [data, setData] = useState<Props>(initial)
+  const [loading, setLoading] = useState(false)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
+  const [quickFilter, setQuickFilter] = useState('year')
+
+  useEffect(() => {
+    const { from, to } = getQuickRange('year')
+    setFromDate(from)
+    setToDate(to)
+  }, [])
+
+  useEffect(() => {
+    if (!fromDate || !toDate) return
+    setLoading(true)
+    fetch(`/api/dashboard/stats?from=${fromDate}&to=${toDate}`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [fromDate, toDate])
+
+  function applyQuick(key: string) {
+    setQuickFilter(key)
+    const { from, to } = getQuickRange(key)
+    setFromDate(from)
+    setToDate(to)
+  }
+
+  const { stats, byIssueTopic, byPartner, partnerSummary, byStatus, byUrgency, byCanUserSolve, byIssueType, byEngineer, monthlyTrend } = data
+
   const resolutionRate = stats.totalTickets ? Math.round(stats.resolvedTickets / stats.totalTickets * 100) : 0
   const escalationRate = stats.totalTickets ? (stats.escalationCount / stats.totalTickets * 100).toFixed(1) : '0'
   const selfSolvePct = stats.totalTickets ? Math.round(stats.selfSolvableCount / stats.totalTickets * 100) : 0
@@ -169,7 +217,7 @@ export default function DashboardClient({
     <div style={{ padding: '32px', maxWidth: '1200px', margin: '0 auto' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '4px' }}>Dashboard</h1>
           <p style={{ fontSize: '14px', color: 'var(--muted-foreground)' }}>
@@ -177,6 +225,36 @@ export default function DashboardClient({
           </p>
         </div>
         <ExportMenu />
+      </div>
+
+      {/* Date filter bar */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {QUICK_FILTERS.map(f => (
+            <button key={f.key} onClick={() => applyQuick(f.key)} style={{
+              padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
+              background: quickFilter === f.key ? C.gold : 'transparent',
+              color: quickFilter === f.key ? '#fff' : 'var(--muted-foreground)',
+              borderColor: quickFilter === f.key ? C.gold : 'var(--border)',
+            }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
+          <input type="date" value={fromDate}
+            onChange={e => { setFromDate(e.target.value); setQuickFilter('custom') }}
+            style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--foreground)', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>to</span>
+          <input type="date" value={toDate}
+            onChange={e => { setToDate(e.target.value); setQuickFilter('custom') }}
+            style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--foreground)', cursor: 'pointer' }}
+          />
+        </div>
+        {loading && <span style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginLeft: '8px' }}>Loading…</span>}
       </div>
 
       {/* ── KPI Row ── */}
