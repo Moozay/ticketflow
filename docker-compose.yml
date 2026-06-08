@@ -10,6 +10,9 @@ services:
       NEXTAUTH_URL: http://localhost:3000
       AUTH_SECRET: super-secret-change-in-production
       AUTH_TRUST_HOST: "true"
+      CLOUDINARY_CLOUD_NAME: dcqipxgoz
+      CLOUDINARY_API_KEY: "636651839636418"
+      CLOUDINARY_API_SECRET: h2jLkMFxOFmavUpC2h5a_Bd61c4
     depends_on:
       db:
         condition: service_healthy

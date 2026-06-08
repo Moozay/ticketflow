@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { Suspense } from 'react'
 import TicketsFilterSaver from './TicketsFilterSaver'
+import QuickStatusEdit from './QuickStatusEdit'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   DONE:             { bg: '#f0fdf4', color: '#16a34a' },
@@ -220,6 +221,7 @@ export default async function TicketsPage({
                 { label: 'Status', key: null },
                 { label: 'Urgency', key: null },
                 { label: 'Start Date', key: 'startDate' },
+                { label: '', key: null },
               ].map(({ label, key }) => {
                 const isActive = (params.sort ?? 'startDate') === (key ?? '')
                 const nextDir = isActive && params.dir !== 'asc' ? 'asc' : 'desc'
@@ -268,6 +270,12 @@ export default async function TicketsPage({
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--muted-foreground)' }}>
                   {formatDate(t.startDate)}
+                </td>
+                <td className="px-4 py-3">
+                  <QuickStatusEdit
+                    ticket={{ id: t.id, ticketNumber: t.ticketNumber, status: t.status, issueTopic: t.issueTopic ?? null, actualEnd: t.actualEnd ?? null, documentationStatus: t.documentationStatus, description: t.description ?? null }}
+                    issueTopics={issueTopics.map(i => i.name)}
+                  />
                 </td>
               </tr>
             ))}

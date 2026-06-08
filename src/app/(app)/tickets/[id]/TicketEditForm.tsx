@@ -363,7 +363,13 @@ export default function TicketEditForm({ ticket, documentations, engineers, popZ
                   )}
                 </FormField>
                 <FormField label="Status">
-                  <select style={inputStyle} value={form.status} onChange={e => set('status', e.target.value)}>
+                  <select style={inputStyle} value={form.status} onChange={e => {
+                    const s = e.target.value
+                    set('status', s)
+                    if ((s === 'DONE' || s === 'DONE_BY_L2') && !form.actualEnd) {
+                      set('actualEnd', new Date().toISOString().split('T')[0])
+                    }
+                  }}>
                     {['NOT_YET_STARTED','IN_PROGRESS','ON_HOLD','DONE','DONE_BY_L2','ESCALATED_TO_L2'].map(s => (
                       <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
                     ))}

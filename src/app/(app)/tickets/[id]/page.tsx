@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils'
 import TicketEditForm from './TicketEditForm'
 import ArchiveButton from './ArchiveButton'
 import BackToTickets from './BackToTickets'
+import TicketAttachments from './TicketAttachments'
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   DONE:             { bg: '#f0fdf4', color: '#16a34a' },
@@ -321,48 +322,12 @@ export default async function TicketDetailPage({
       </div>
 
       {/* Attachments */}
-      {ticket.attachments.length > 0 && (
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: '12px',
-          padding: '24px',
-          marginBottom: '20px',
-        }}>
-          <SectionHeading>Attachments ({ticket.attachments.length})</SectionHeading>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {ticket.attachments.map(att => (
-              <a
-                key={att.id}
-                href={att.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  background: 'var(--muted)',
-                  color: 'var(--foreground)',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                </svg>
-                {att.fileName}
-                {att.fileSize && (
-                  <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--muted-foreground)' }}>
-                    {(att.fileSize / 1024).toFixed(1)} KB
-                  </span>
-                )}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '24px', marginBottom: '20px' }}>
+        <TicketAttachments
+          ticketId={ticket.id}
+          initialAttachments={ticket.attachments.map(a => ({ ...a, createdAt: a.createdAt.toISOString() }))}
+        />
+      </div>
     </div>
   )
 }
