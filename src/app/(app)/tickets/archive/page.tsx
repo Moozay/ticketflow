@@ -4,13 +4,13 @@ import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import ArchiveActions from './ArchiveActions'
 
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  DONE:             { bg: '#f0fdf4', color: '#16a34a' },
-  DONE_BY_L2:       { bg: '#f0fdf4', color: '#15803d' },
-  ESCALATED_TO_L2:  { bg: '#fef3c7', color: '#d97706' },
-  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb' },
-  ON_HOLD:          { bg: '#f5f3ff', color: '#7c3aed' },
-  NOT_YET_STARTED:  { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const STATUS_STYLES: Record<string, { bg: string; color: string; ring: string }> = {
+  DONE:             { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  DONE_BY_L2:       { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  ESCALATED_TO_L2:  { bg: '#fffbeb', color: '#b45309', ring: '#fde68a' },
+  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb', ring: '#bfdbfe' },
+  ON_HOLD:          { bg: '#f1f5f9', color: '#64748b', ring: 'transparent' },
+  NOT_YET_STARTED:  { bg: '#f5f5f5', color: '#737373', ring: 'transparent' },
 }
 
 export default async function ArchivePage() {
@@ -75,7 +75,7 @@ export default async function ArchivePage() {
                     <td style={{ padding: '12px 14px', color: 'var(--foreground)' }}>{t.designPartner}</td>
                     <td style={{ padding: '12px 14px', color: 'var(--muted-foreground)' }}>{t.issueTopic ?? '—'}</td>
                     <td style={{ padding: '12px 14px' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '11px', fontWeight: 600, background: statusStyle.bg, color: statusStyle.color }}>
+                      <span style={{ padding: '2px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: 500, background: statusStyle.bg, color: statusStyle.color, boxShadow: `inset 0 0 0 1px ${statusStyle.ring}` }}>
                         {t.status.replace(/_/g, ' ')}
                       </span>
                     </td>

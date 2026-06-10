@@ -88,7 +88,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const isExtern = user.role === 'EXTERN'
 
   return (
-    <aside className="flex flex-col w-56 shrink-0 h-screen sticky top-0" style={{ background: 'var(--sidebar-bg)' }}>
+    <aside className="flex flex-col w-56 shrink-0 h-screen sticky top-0" style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--sidebar-accent)' }}>
       {/* Brand */}
       <div className="px-5 py-5 border-b" style={{ borderColor: 'var(--sidebar-accent)' }}>
         <div className="flex items-center gap-2.5">
@@ -116,11 +116,10 @@ export default function Sidebar({ user }: SidebarProps) {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link key={item.href} href={item.href}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active ? '' : 'hover:bg-[#f5f5f5]'}`}
               style={{
-                color: active ? '#ffffff' : 'var(--sidebar-muted)',
-                background: active ? 'var(--sidebar-accent)' : 'transparent',
-                borderLeft: active ? '2px solid var(--sidebar-active)' : '2px solid transparent',
+                color: active ? 'var(--sidebar-active)' : 'var(--sidebar-muted)',
+                background: active ? 'var(--sidebar-active-bg)' : 'transparent',
               }}
             >
               {item.icon}
@@ -132,17 +131,16 @@ export default function Sidebar({ user }: SidebarProps) {
         {isAdmin && (
           <>
             <div className="pt-4 pb-1 px-3">
-              <p className="text-xs font-medium uppercase tracking-widest" style={{ color: 'var(--sidebar-muted)' }}>Admin</p>
+              <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#a3a3a3' }}>Admin</p>
             </div>
             {adminNav.map(item => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link key={item.href} href={item.href}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active ? '' : 'hover:bg-[#f5f5f5]'}`}
                   style={{
-                    color: active ? '#ffffff' : 'var(--sidebar-muted)',
-                    background: active ? 'var(--sidebar-accent)' : 'transparent',
-                    borderLeft: active ? '2px solid var(--sidebar-active)' : '2px solid transparent',
+                    color: active ? 'var(--sidebar-active)' : 'var(--sidebar-muted)',
+                    background: active ? 'var(--sidebar-active-bg)' : 'transparent',
                   }}
                 >
                   {item.icon}

@@ -20,11 +20,10 @@ export default function TicketsNavLink({ icon, isExtern }: { icon: React.ReactNo
 
   return (
     <Link href={href}
-      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all"
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${active ? '' : 'hover:bg-[#f5f5f5]'}`}
       style={{
-        color: active ? '#ffffff' : 'var(--sidebar-muted)',
-        background: active ? 'var(--sidebar-accent)' : 'transparent',
-        borderLeft: active ? '2px solid var(--sidebar-active)' : '2px solid transparent',
+        color: active ? 'var(--sidebar-active)' : 'var(--sidebar-muted)',
+        background: active ? 'var(--sidebar-active-bg)' : 'transparent',
       }}
     >
       {icon}

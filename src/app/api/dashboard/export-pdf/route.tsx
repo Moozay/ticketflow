@@ -9,23 +9,23 @@ import {
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const C = {
-  gold:    '#d4a853',
-  mid:     '#b8934a',
-  deep:    '#a07d3e',
-  dark:    '#8a6b34',
-  darker:  '#735a2b',
-  darkest: '#5c4822',
-  pale:    '#e0bc6a',
-  lightest:'#f0d8a0',
-  fg:      '#1a1a1a',
-  muted:   '#8a8580',
-  border:  '#e5e3de',
-  bg:      '#f8f7f4',
+  gold:    '#5C7CA6',
+  mid:     '#6B9080',
+  deep:    '#C9A66B',
+  dark:    '#C23A2B',
+  darker:  '#94A3B8',
+  darkest: '#3E5C7E',
+  pale:    '#A7BED6',
+  lightest:'#D5E0EC',
+  fg:      '#1e293b',
+  muted:   '#64748b',
+  border:  '#e5e5e5',
+  bg:      '#fafafa',
   card:    '#ffffff',
-  red:     '#7f1d1d',
-  sidebar: '#1c1917',
+  red:     '#C23A2B',
+  sidebar: '#111827',
 }
-const SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#c49840', '#4a3a1c']
+const SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#7C93AD', '#C0D2E2']
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
@@ -34,8 +34,8 @@ const s = StyleSheet.create({
   header: { backgroundColor: C.sidebar, borderRadius: 8, padding: '14 18', marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft: {},
   headerTitle: { fontSize: 17, fontFamily: 'Helvetica-Bold', color: C.gold },
-  headerSub: { fontSize: 8, color: '#78716c', marginTop: 2 },
-  headerDate: { fontSize: 7.5, color: '#78716c', textAlign: 'right' },
+  headerSub: { fontSize: 8, color: '#737373', marginTop: 2 },
+  headerDate: { fontSize: 7.5, color: '#737373', textAlign: 'right' },
   // section
   sectionWrap: { marginBottom: 22 },
   sectionTitle: { fontSize: 11, fontFamily: 'Helvetica-Bold', color: C.fg, marginBottom: 2 },
@@ -266,10 +266,10 @@ function DashboardPDF(data: PDFData) {
   const selfSolvePct = stats.totalTickets ? Math.round(stats.selfSolvableCount / stats.totalTickets * 100) : 0
 
   const STATUS_COLORS: Record<string, string> = {
-    'Not Started': C.lightest, 'In Progress': C.gold, 'On Hold': C.mid,
-    'Done': C.darkest, 'Done (L2)': C.darker, 'Escalated': C.red,
+    'Not Started': '#CBD5E1', 'In Progress': '#5C7CA6', 'On Hold': '#94A3B8',
+    'Done': '#6B9080', 'Done (L2)': '#6B9080', 'Escalated': '#C23A2B',
   }
-  const URGENCY_COLORS: Record<string, string> = { 'High': C.red, 'Medium': C.dark, 'Low': C.gold, 'Not Specified': C.muted }
+  const URGENCY_COLORS: Record<string, string> = { 'High': '#C23A2B', 'Medium': '#C9A66B', 'Low': '#94A3B8', 'Not Specified': '#CBD5E1' }
 
   return (
     <Document title="TicketFlow Dashboard Report" author="TicketFlow" creator="TicketFlow">

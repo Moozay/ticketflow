@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   AreaChart, Area, CartesianGrid,
@@ -10,37 +9,17 @@ import ExportMenu from './ExportMenu'
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
 const C = {
-  gold:    '#d4a853',
-  mid:     '#b8934a',
-  deep:    '#a07d3e',
-  dark:    '#8a6b34',
-  darker:  '#735a2b',
-  darkest: '#5c4822',
-  pale:    '#e0bc6a',
-  lightest:'#f0d8a0',
+  gold:    '#5C7CA6',
+  mid:     '#6B9080',
+  deep:    '#C9A66B',
+  dark:    '#C23A2B',
+  darker:  '#94A3B8',
+  darkest: '#3E5C7E',
+  pale:    '#A7BED6',
+  lightest:'#D5E0EC',
 }
 
-const BROWN_SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#c49840', '#4a3a1c']
-
-const QUICK_FILTERS = [
-  { key: 'month',  label: 'This Month' },
-  { key: 'year',   label: 'This Year'  },
-  { key: 'last3m', label: 'Last 3M'   },
-  { key: 'last6m', label: 'Last 6M'   },
-]
-
-const pad = (n: number) => String(n).padStart(2, '0')
-const fmtDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-
-function getQuickRange(key: string) {
-  const now = new Date()
-  const to = fmtDate(now)
-  if (key === 'month')  return { from: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`, to }
-  if (key === 'year')   return { from: `${now.getFullYear()}-01-01`, to }
-  if (key === 'last3m') { const d = new Date(now); d.setMonth(d.getMonth() - 3); return { from: fmtDate(d), to } }
-  if (key === 'last6m') { const d = new Date(now); d.setMonth(d.getMonth() - 6); return { from: fmtDate(d), to } }
-  return { from: `${now.getFullYear()}-01-01`, to }
-}
+const BROWN_SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#7C93AD', '#C0D2E2']
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PartnerSummary {
@@ -112,7 +91,7 @@ function MiniBar({ pct, color }: { pct: number; color: string }) {
 const SimpleTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{label}</p>
       <p style={{ color: C.gold }}>{payload[0].value.toLocaleString()} tickets</p>
     </div>
@@ -125,7 +104,7 @@ const StackedPartnerTooltip = ({ active, payload, label }: any) => {
   const cannotFix = payload.find((p: any) => p.dataKey === 'cannotFix')?.value ?? 0
   const total = canFix + cannotFix
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '180px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '180px' }}>
       <p style={{ fontWeight: 700, marginBottom: '8px', maxWidth: '200px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }}>
         <span style={{ color: C.gold }}>● User can fix</span>
@@ -144,7 +123,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
   const total = payload.find((p: any) => p.dataKey === 'total')?.value ?? 0
   const resolved = payload.find((p: any) => p.dataKey === 'resolved')?.value ?? 0
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
       <p style={{ fontWeight: 700, marginBottom: '6px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginBottom: '4px' }}>
         <span style={{ color: C.pale }}>Total</span>
@@ -155,7 +134,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
         <span style={{ fontWeight: 600 }}>{resolved}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-        <span style={{ color: '#aaa' }}>Rate</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Rate</span>
         <span style={{ fontWeight: 600 }}>{total ? Math.round(resolved / total * 100) : 0}%</span>
       </div>
     </div>
@@ -166,49 +145,21 @@ const TrendTooltip = ({ active, payload, label }: any) => {
 export default function DashboardClient(initial: Props) {
   const router = useRouter()
 
-  const [data, setData] = useState<Props>(initial)
-  const [loading, setLoading] = useState(false)
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [quickFilter, setQuickFilter] = useState('year')
-
-  useEffect(() => {
-    const { from, to } = getQuickRange('year')
-    setFromDate(from)
-    setToDate(to)
-  }, [])
-
-  useEffect(() => {
-    if (!fromDate || !toDate) return
-    setLoading(true)
-    fetch(`/api/dashboard/stats?from=${fromDate}&to=${toDate}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [fromDate, toDate])
-
-  function applyQuick(key: string) {
-    setQuickFilter(key)
-    const { from, to } = getQuickRange(key)
-    setFromDate(from)
-    setToDate(to)
-  }
-
-  const { stats, byIssueTopic, byPartner, partnerSummary, byStatus, byUrgency, byCanUserSolve, byIssueType, byEngineer, monthlyTrend } = data
+  const { stats, byIssueTopic, byPartner, partnerSummary, byStatus, byUrgency, byCanUserSolve, byIssueType, byEngineer, monthlyTrend } = initial
 
   const resolutionRate = stats.totalTickets ? Math.round(stats.resolvedTickets / stats.totalTickets * 100) : 0
   const escalationRate = stats.totalTickets ? (stats.escalationCount / stats.totalTickets * 100).toFixed(1) : '0'
   const selfSolvePct = stats.totalTickets ? Math.round(stats.selfSolvableCount / stats.totalTickets * 100) : 0
 
   const STATUS_COLORS: Record<string, string> = {
-    'Not Started': C.lightest, 'In Progress': C.gold, 'On Hold': C.mid,
-    'Done': C.darkest, 'Done (L2)': C.darker, 'Escalated': '#8b0000',
+    'Not Started': '#CBD5E1', 'In Progress': '#5C7CA6', 'On Hold': '#94A3B8',
+    'Done': '#6B9080', 'Done (L2)': '#6B9080', 'Escalated': '#C23A2B',
   }
   const URGENCY_COLORS: Record<string, string> = {
-    'High': C.darkest, 'Medium': C.dark, 'Low': C.gold,
+    'High': '#C23A2B', 'Medium': '#C9A66B', 'Low': '#94A3B8',
   }
   const CAN_FIX_COLORS: Record<string, string> = {
-    'Yes': C.darkest, 'No': C.gold,
+    'Yes': '#6B9080', 'No': '#C23A2B',
   }
 
   const axisStyle = { fontSize: 11, fill: 'var(--muted-foreground)' }
@@ -227,43 +178,11 @@ export default function DashboardClient(initial: Props) {
         <ExportMenu />
       </div>
 
-      {/* Date filter bar */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '28px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          {QUICK_FILTERS.map(f => (
-            <button key={f.key} onClick={() => applyQuick(f.key)} style={{
-              padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
-              background: quickFilter === f.key ? C.gold : 'transparent',
-              color: quickFilter === f.key ? '#fff' : 'var(--muted-foreground)',
-              borderColor: quickFilter === f.key ? C.gold : 'var(--border)',
-            }}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
-          <input type="date" value={fromDate}
-            onChange={e => { setFromDate(e.target.value); setQuickFilter('custom') }}
-            style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--foreground)', cursor: 'pointer' }}
-          />
-          <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>to</span>
-          <input type="date" value={toDate}
-            onChange={e => { setToDate(e.target.value); setQuickFilter('custom') }}
-            style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--foreground)', cursor: 'pointer' }}
-          />
-        </div>
-        {loading && <span style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginLeft: '8px' }}>Loading…</span>}
-      </div>
-
       {/* ── KPI Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '36px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '36px' }}>
         <KpiCard label="Total Tickets" value={stats.totalTickets.toLocaleString()} />
         <KpiCard label="Resolved" value={`${resolutionRate}%`} sub={`${stats.resolvedTickets.toLocaleString()} tickets`} accent={C.darkest} />
-        <KpiCard label="Not Yet Started" value={stats.notStartedCount.toLocaleString()} sub="Awaiting action" accent={C.gold} />
-        <KpiCard label="On Hold" value={stats.onHoldCount.toLocaleString()} sub="Paused tickets" accent={C.mid} />
-        <KpiCard label="Escalation Rate" value={`${escalationRate}%`} sub={`${stats.escalationCount} escalated`} accent="#8b0000" />
+        <KpiCard label="Escalation Rate" value={`${escalationRate}%`} sub={`${stats.escalationCount} escalated`} accent="#C23A2B" />
         <KpiCard label="User Can Fix" value={`${selfSolvePct}%`} sub={`${stats.selfSolvableCount.toLocaleString()} tickets`} accent={C.dark} />
       </div>
 
@@ -299,7 +218,7 @@ export default function DashboardClient(initial: Props) {
               <YAxis type="category" dataKey="name" tick={axisStyle} width={140} axisLine={false} tickLine={false}
                 tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 20) + '…' : v} />
               <Tooltip content={<StackedPartnerTooltip />} cursor={{ fill: 'var(--muted)' }} />
-              <Bar dataKey="canFix" stackId="a" fill={C.gold} radius={[0, 0, 0, 0]} name="Can fix" />
+              <Bar dataKey="canFix" stackId="a" fill={C.pale} radius={[0, 0, 0, 0]} name="Can fix" />
               <Bar dataKey="cannotFix" stackId="a" fill={C.darkest} radius={[0, 4, 4, 0]} name="Cannot fix" />
             </BarChart>
           </ResponsiveContainer>
@@ -347,7 +266,7 @@ export default function DashboardClient(initial: Props) {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <span style={{ color: p.escalations > 0 ? '#8b0000' : 'var(--muted-foreground)', fontWeight: p.escalations > 0 ? 700 : 400 }}>
+                        <span style={{ color: p.escalations > 0 ? '#C23A2B' : 'var(--muted-foreground)', fontWeight: p.escalations > 0 ? 700 : 400 }}>
                           {p.escalations > 0 ? `${p.escalations} (${escPct}%)` : '—'}
                         </span>
                       </td>

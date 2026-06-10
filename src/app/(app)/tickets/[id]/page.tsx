@@ -7,35 +7,35 @@ import ArchiveButton from './ArchiveButton'
 import BackToTickets from './BackToTickets'
 import TicketAttachments from './TicketAttachments'
 
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  DONE:             { bg: '#f0fdf4', color: '#16a34a' },
-  DONE_BY_L2:       { bg: '#f0fdf4', color: '#15803d' },
-  ESCALATED_TO_L2:  { bg: '#fef3c7', color: '#d97706' },
-  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb' },
-  ON_HOLD:          { bg: '#f5f3ff', color: '#7c3aed' },
-  NOT_YET_STARTED:  { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const STATUS_STYLES: Record<string, { bg: string; color: string; ring: string }> = {
+  DONE:             { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  DONE_BY_L2:       { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  ESCALATED_TO_L2:  { bg: '#fffbeb', color: '#b45309', ring: '#fde68a' },
+  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb', ring: '#bfdbfe' },
+  ON_HOLD:          { bg: '#f1f5f9', color: '#64748b', ring: 'transparent' },
+  NOT_YET_STARTED:  { bg: '#f5f5f5', color: '#737373', ring: 'transparent' },
 }
 
-const URGENCY_STYLES: Record<string, { bg: string; color: string }> = {
-  HIGH:          { bg: '#fef2f2', color: '#dc2626' },
-  MEDIUM:        { bg: '#fef3c7', color: '#d97706' },
-  LOW:           { bg: '#f0fdf4', color: '#16a34a' },
-  NOT_SPECIFIED: { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const URGENCY_STYLES: Record<string, { bg: string; color: string; ring: string }> = {
+  HIGH:          { bg: '#fef2f2', color: '#dc2626', ring: '#fecaca' },
+  MEDIUM:        { bg: '#fffbeb', color: '#b45309', ring: '#fde68a' },
+  LOW:           { bg: '#f1f5f9', color: '#64748b', ring: 'transparent' },
+  NOT_SPECIFIED: { bg: '#f5f5f5', color: '#737373', ring: 'transparent' },
 }
 
-function Badge({ label, style }: { label: string; style: { bg: string; color: string } }) {
+function Badge({ label, style }: { label: string; style: { bg: string; color: string; ring: string } }) {
   return (
     <span
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         padding: '2px 10px',
-        borderRadius: '6px',
+        borderRadius: '9999px',
         fontSize: '12px',
-        fontWeight: 600,
+        fontWeight: 500,
         background: style.bg,
         color: style.color,
-        letterSpacing: '0.01em',
+        boxShadow: `inset 0 0 0 1px ${style.ring}`,
       }}
     >
       {label.replace(/_/g, ' ')}

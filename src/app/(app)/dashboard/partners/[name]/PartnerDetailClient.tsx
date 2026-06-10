@@ -10,34 +10,34 @@ import { formatDate } from '@/lib/utils'
 
 // ─── Colour palette ───────────────────────────────────────────────────────────
 const C = {
-  gold: '#d4a853', mid: '#b8934a', deep: '#a07d3e', dark: '#8a6b34',
-  darker: '#735a2b', darkest: '#5c4822', pale: '#e0bc6a', lightest: '#f0d8a0',
+  gold: '#5C7CA6', mid: '#6B9080', deep: '#C9A66B', dark: '#C23A2B',
+  darker: '#94A3B8', darkest: '#3E5C7E', pale: '#A7BED6', lightest: '#D5E0EC',
 }
-const SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#c49840', '#4a3a1c']
+const SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#7C93AD', '#C0D2E2']
 
 const STATUS_COLORS: Record<string, string> = {
-  'Not Started': C.lightest, 'In Progress': C.gold, 'On Hold': C.mid,
-  'Done': C.darkest, 'Done (L2)': C.darker, 'Escalated': '#8b0000',
+  'Not Started': '#CBD5E1', 'In Progress': '#5C7CA6', 'On Hold': '#94A3B8',
+  'Done': '#6B9080', 'Done (L2)': '#6B9080', 'Escalated': '#C23A2B',
 }
 const STATUS_BADGE: Record<string, { bg: string; color: string }> = {
-  NOT_YET_STARTED: { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
-  IN_PROGRESS:     { bg: '#fef3c7', color: '#d97706' },
-  ON_HOLD:         { bg: '#f5f3ff', color: '#7c3aed' },
-  DONE:            { bg: '#f0fdf4', color: '#16a34a' },
-  DONE_BY_L2:      { bg: '#f0fdf4', color: '#15803d' },
-  ESCALATED_TO_L2: { bg: '#fef2f2', color: '#dc2626' },
+  NOT_YET_STARTED: { bg: '#f5f5f5', color: '#737373' },
+  IN_PROGRESS:     { bg: '#eff6ff', color: '#2563eb' },
+  ON_HOLD:         { bg: '#f1f5f9', color: '#64748b' },
+  DONE:            { bg: '#ecfdf5', color: '#047857' },
+  DONE_BY_L2:      { bg: '#ecfdf5', color: '#047857' },
+  ESCALATED_TO_L2: { bg: '#fffbeb', color: '#b45309' },
 }
 const URGENCY_BADGE: Record<string, { bg: string; color: string }> = {
   HIGH:          { bg: '#fef2f2', color: '#dc2626' },
-  MEDIUM:        { bg: '#fef3c7', color: '#d97706' },
-  LOW:           { bg: '#f0fdf4', color: '#16a34a' },
-  NOT_SPECIFIED: { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+  MEDIUM:        { bg: '#fffbeb', color: '#b45309' },
+  LOW:           { bg: '#f1f5f9', color: '#64748b' },
+  NOT_SPECIFIED: { bg: '#f5f5f5', color: '#737373' },
 }
 const URGENCY_COLORS: Record<string, string> = {
-  'High': C.darkest, 'Medium': C.dark, 'Low': C.gold, 'Not Specified': C.lightest,
+  'High': '#C23A2B', 'Medium': '#C9A66B', 'Low': '#94A3B8', 'Not Specified': '#CBD5E1',
 }
 const CAN_FIX_COLORS: Record<string, string> = {
-  'Yes': C.darkest, 'Partially': C.dark, 'No': C.gold, 'Unknown': C.lightest,
+  'Yes': '#6B9080', 'Partially': '#C9A66B', 'No': '#C23A2B', 'Unknown': '#CBD5E1',
 }
 const DOC_COLORS: Record<string, string> = {
   'Already Exists': C.darkest, 'Created': C.darker, 'Will Create': C.deep,
@@ -127,7 +127,7 @@ function Badge({ label, style }: { label: string; style: { bg: string; color: st
 const SimpleTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{label}</p>
       <p style={{ color: C.gold }}>{payload[0].value.toLocaleString()} tickets</p>
     </div>
@@ -139,7 +139,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
   const total = payload.find((p: any) => p.dataKey === 'total')?.value ?? 0
   const resolved = payload.find((p: any) => p.dataKey === 'resolved')?.value ?? 0
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
       <p style={{ fontWeight: 700, marginBottom: '6px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginBottom: '4px' }}>
         <span style={{ color: C.pale }}>Total</span><span style={{ fontWeight: 600 }}>{total}</span>
@@ -148,7 +148,7 @@ const TrendTooltip = ({ active, payload, label }: any) => {
         <span style={{ color: C.gold }}>Resolved</span><span style={{ fontWeight: 600 }}>{resolved}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px' }}>
-        <span style={{ color: '#aaa' }}>Rate</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Rate</span>
         <span style={{ fontWeight: 600 }}>{total ? Math.round(resolved / total * 100) : 0}%</span>
       </div>
     </div>
@@ -196,7 +196,7 @@ export default function PartnerDetailClient({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px', marginBottom: '32px' }}>
         <KpiCard label="Total Tickets" value={stats.totalTickets.toLocaleString()} highlight />
         <KpiCard label="Resolution Rate" value={`${resolutionRate}%`} sub={`${stats.resolvedCount.toLocaleString()} resolved`} accent={C.dark} />
-        <KpiCard label="Escalations" value={stats.escalationCount} sub={`${escalationRate}% escalation rate`} accent={stats.escalationCount > 0 ? '#8b0000' : C.dark} />
+        <KpiCard label="Escalations" value={stats.escalationCount} sub={`${escalationRate}% escalation rate`} accent={stats.escalationCount > 0 ? '#C23A2B' : C.dark} />
         <KpiCard label="User Can Fix" value={`${selfSolvePct}%`} sub={`${stats.selfSolvableCount.toLocaleString()} tickets`} accent={C.mid} />
       </div>
 
@@ -305,40 +305,6 @@ export default function PartnerDetailClient({
         </ChartCard>
       </Section>
 
-      {/* Urgency + Documentation */}
-      <Section
-        title="Urgency & Documentation"
-        description="How critical are the issues and how well is the resolution process documented?"
-      >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-          <ChartCard title="Urgency Distribution">
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart layout="vertical" data={byUrgency} margin={{ left: 4, right: 60, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={axisStyle} width={90} axisLine={false} tickLine={false} />
-                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {byUrgency.map(d => <Cell key={d.name} fill={URGENCY_COLORS[d.name] ?? C.gold} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard title="Documentation Status" sub="Are solutions documented for future reference?">
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart layout="vertical" data={byDocStatus} margin={{ left: 4, right: 60, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={axisStyle} width={110} axisLine={false} tickLine={false} />
-                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {byDocStatus.map(d => <Cell key={d.name} fill={DOC_COLORS[d.name] ?? C.gold} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-        </div>
-      </Section>
-
       {/* Ticket List */}
       <Section
         title={`All Tickets (${filteredTickets.length}${canFixFilter !== 'ALL' ? ` of ${tickets.length}` : ''})`}
@@ -351,8 +317,8 @@ export default function PartnerDetailClient({
               onClick={() => setCanFixFilter(v)}
               style={{
                 padding: '5px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 600,
-                border: `1px solid ${canFixFilter === v ? C.dark : 'var(--border)'}`,
-                background: canFixFilter === v ? C.dark : 'transparent',
+                border: `1px solid ${canFixFilter === v ? C.gold : 'var(--border)'}`,
+                background: canFixFilter === v ? C.gold : 'transparent',
                 color: canFixFilter === v ? '#fff' : 'var(--muted-foreground)',
                 cursor: 'pointer',
               }}

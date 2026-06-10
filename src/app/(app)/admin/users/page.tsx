@@ -89,15 +89,12 @@ export default async function AdminUsersPage() {
                 </td>
                 <td style={{ padding: '12px 16px', color: 'var(--muted-foreground)' }}>{user.email}</td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{
-                    display: 'inline-flex',
-                    padding: '2px 10px',
-                    borderRadius: '5px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    background: user.role === 'ADMIN' ? '#fef3c7' : 'var(--muted)',
-                    color: user.role === 'ADMIN' ? '#d97706' : 'var(--muted-foreground)',
-                  }}>
+                  <span
+                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+                    style={{
+                      background: user.role === 'ADMIN' ? '#7c3aed' : user.role === 'EXTERN' ? '#64748b' : '#2563eb',
+                    }}
+                  >
                     {user.role}
                   </span>
                 </td>

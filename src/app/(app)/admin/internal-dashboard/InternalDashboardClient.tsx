@@ -9,28 +9,29 @@ import {
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const C = {
-  gold:    '#d4a853',
-  mid:     '#b8934a',
-  deep:    '#a07d3e',
-  dark:    '#8a6b34',
-  darker:  '#735a2b',
-  darkest: '#5c4822',
-  pale:    '#e0bc6a',
-  lightest:'#f0d8a0',
+  gold:    '#5C7CA6',
+  mid:     '#6B9080',
+  deep:    '#C9A66B',
+  dark:    '#C23A2B',
+  darker:  '#94A3B8',
+  darkest: '#3E5C7E',
+  pale:    '#A7BED6',
+  lightest:'#D5E0EC',
 }
-const BROWN_SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#c49840', '#4a3a1c']
+const BROWN_SCALE = [C.gold, C.mid, C.deep, C.dark, C.darker, C.darkest, C.pale, C.lightest, '#7C93AD', '#C0D2E2']
 const STATUS_COLORS: Record<string, string> = {
-  'Done': C.darkest, 'Escalated to L2': '#8b0000',
-  'On Hold': C.mid, 'Ongoing': C.gold, 'Not Yet Started': C.lightest,
+  'Done': '#6B9080', 'Escalated to L2': '#C23A2B',
+  'On Hold': '#94A3B8', 'Ongoing': '#5C7CA6', 'Not Yet Started': '#CBD5E1',
 }
-const CAT_COLORS = [C.gold, C.mid, C.dark]
+const CAT_COLORS = ['#5C7CA6', '#6B9080', '#C9A66B']
 
 const TABS = ['General', 'Performance', 'Escalations', 'Partners', 'Engineers']
 const QUICK_FILTERS = [
-  { key: 'month', label: 'This Month' },
-  { key: 'year',  label: 'This Year'  },
-  { key: 'last3m', label: 'Last 3M'  },
-  { key: 'last6m', label: 'Last 6M'  },
+  { key: 'all',    label: 'All Time'   },
+  { key: 'year',   label: 'This Year'  },
+  { key: 'last6m', label: 'Last 6M'    },
+  { key: 'last3m', label: 'Last 3M'    },
+  { key: 'month',  label: 'This Month' },
 ]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ function getQuickRange(key: string) {
   if (key === 'year')   return { from: `${now.getFullYear()}-01-01`, to }
   if (key === 'last3m') { const d = new Date(now); d.setMonth(d.getMonth() - 3); return { from: fmtDate(d), to } }
   if (key === 'last6m') { const d = new Date(now); d.setMonth(d.getMonth() - 6); return { from: fmtDate(d), to } }
+  if (key === 'all')    return { from: '2004-01-01', to }
   return { from: `${now.getFullYear()}-01-01`, to }
 }
 
@@ -138,7 +140,7 @@ const axisStyle = { fontSize: 11, fill: 'var(--muted-foreground)' as string }
 const PieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{payload[0].name}</p>
       <p style={{ color: C.gold }}>{payload[0].value.toLocaleString()} tickets</p>
     </div>
@@ -148,7 +150,7 @@ const PieTooltip = ({ active, payload }: any) => {
 const SubcoTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{label}</p>
       <p style={{ color: C.gold }}>{payload[0].value.toLocaleString()} tickets</p>
     </div>
@@ -159,7 +161,7 @@ const WeeklyTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   const get = (k: string) => payload.find((p: any) => p.dataKey === k)?.value ?? 0
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '170px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '170px' }}>
       <p style={{ fontWeight: 700, marginBottom: '8px' }}>{label}</p>
       {([['cat1', 'Category 1', C.gold], ['cat2', 'Category 2', C.mid], ['cat3', 'Category 3', C.dark]] as [string,string,string][]).map(([k, n, c]) => (
         <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }}>
@@ -168,7 +170,7 @@ const WeeklyTooltip = ({ active, payload, label }: any) => {
         </div>
       ))}
       <div style={{ borderTop: '1px solid #555', marginTop: '6px', paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
-        <span style={{ color: '#ccc' }}>Total</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Total</span>
         <span style={{ fontWeight: 700 }}>{get('total')}</span>
       </div>
     </div>
@@ -178,7 +180,7 @@ const WeeklyTooltip = ({ active, payload, label }: any) => {
 const AvgDaysTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{label}</p>
       <p style={{ color: C.gold }}>{payload[0].value} days avg</p>
     </div>
@@ -190,10 +192,10 @@ const EscMonthTooltip = ({ active, payload, label }: any) => {
   const esc = payload.find((p: any) => p.dataKey === 'escalated')?.value ?? 0
   const res = payload.find((p: any) => p.dataKey === 'resolved')?.value ?? 0
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '160px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '160px' }}>
       <p style={{ fontWeight: 700, marginBottom: '8px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }}>
-        <span style={{ color: '#f87171' }}>● Escalated</span>
+        <span style={{ color: '#BF1F1F' }}>● Escalated</span>
         <span style={{ fontWeight: 600 }}>{esc}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
@@ -208,14 +210,14 @@ const EscSubcoTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   const d: EscSubco = payload[0]?.payload
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
       <p style={{ fontWeight: 700, marginBottom: '6px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '3px' }}>
-        <span style={{ color: '#f87171' }}>Escalated</span>
+        <span style={{ color: '#BF1F1F' }}>Escalated</span>
         <span style={{ fontWeight: 600 }}>{d?.escalated}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '3px' }}>
-        <span style={{ color: '#aaa' }}>Total tickets</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Total tickets</span>
         <span style={{ fontWeight: 600 }}>{d?.total}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
@@ -229,7 +231,7 @@ const EscSubcoTooltip = ({ active, payload, label }: any) => {
 const BucketTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px' }}>
       <p style={{ fontWeight: 600, marginBottom: '2px' }}>{label}</p>
       <p style={{ color: C.gold }}>{payload[0].value} tickets</p>
     </div>
@@ -237,7 +239,7 @@ const BucketTooltip = ({ active, payload, label }: any) => {
 }
 
 // Resolution-time colour scale: gold (fast) → dark red (slow)
-const BUCKET_COLORS = ['#d4a853', '#b8934a', '#8a6b34', '#735a2b', '#8b0000']
+const BUCKET_COLORS = ['#6B9080', '#5C7CA6', '#C9A66B', '#3E5C7E', '#C23A2B']
 
 const EngCompareTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
@@ -246,14 +248,14 @@ const EngCompareTooltip = ({ active, payload, label }: any) => {
   const total = done + rem
   const pct   = total ? Math.round(done / total * 100) : 0
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '160px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px', minWidth: '160px' }}>
       <p style={{ fontWeight: 700, marginBottom: '8px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }}>
         <span style={{ color: C.gold }}>Done</span>
         <span style={{ fontWeight: 600 }}>{done}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '4px' }}>
-        <span style={{ color: '#aaa' }}>Remaining</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Remaining</span>
         <span style={{ fontWeight: 600 }}>{rem}</span>
       </div>
       <div style={{ borderTop: '1px solid #555', marginTop: '6px', paddingTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
@@ -268,10 +270,10 @@ const PartnerBarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   const d: PartnerStat = payload[0]?.payload
   return (
-    <div style={{ background: 'var(--sidebar-bg)', color: '#fff', border: '1px solid #333', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
+    <div style={{ background: '#fff', color: 'var(--foreground)', border: '1px solid var(--border)', boxShadow: '0 4px 14px rgba(15,23,42,0.10)', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
       <p style={{ fontWeight: 700, marginBottom: '6px' }}>{label}</p>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '3px' }}>
-        <span style={{ color: '#aaa' }}>Total tickets</span>
+        <span style={{ color: 'var(--muted-foreground)' }}>Total tickets</span>
         <span style={{ fontWeight: 600 }}>{d?.total?.toLocaleString()}</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '3px' }}>
@@ -497,11 +499,11 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
             {/* Completion Rate */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px 24px' }}>
               <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted-foreground)', marginBottom: '10px' }}>Completion Rate</p>
-              <p style={{ fontSize: '38px', fontWeight: 700, lineHeight: 1, marginBottom: '12px', color: resolvedPct >= 70 ? C.darkest : resolvedPct >= 40 ? C.gold : '#dc2626' }}>
+              <p style={{ fontSize: '38px', fontWeight: 700, lineHeight: 1, marginBottom: '12px', color: resolvedPct >= 70 ? C.mid : resolvedPct >= 40 ? C.deep : C.dark }}>
                 {resolvedPct}%
               </p>
               <div style={{ height: '6px', background: 'var(--muted)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
-                <div style={{ height: '100%', width: `${resolvedPct}%`, background: resolvedPct >= 70 ? C.darkest : resolvedPct >= 40 ? C.gold : '#dc2626', borderRadius: '3px', transition: 'width 0.4s' }} />
+                <div style={{ height: '100%', width: `${resolvedPct}%`, background: resolvedPct >= 70 ? C.mid : resolvedPct >= 40 ? C.deep : C.dark, borderRadius: '3px', transition: 'width 0.4s' }} />
               </div>
               <p style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>{ticketsDone.toLocaleString()} of {totalTickets.toLocaleString()} closed</p>
             </div>
@@ -603,14 +605,14 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                   <p style={{ fontSize: '26px', fontWeight: 700, color: C.gold, lineHeight: 1, marginBottom: '4px' }}>{ticketsOngoing.toLocaleString()}</p>
                   <p style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{totalTickets ? (ticketsOngoing / totalTickets * 100).toFixed(1) : 0}% of total</p>
                 </div>
-                <div style={{ background: `${C.mid}14`, border: `1px solid ${C.mid}33`, borderRadius: '10px', padding: '14px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: C.mid, marginBottom: '6px' }}>On Hold</p>
-                  <p style={{ fontSize: '26px', fontWeight: 700, color: C.mid, lineHeight: 1, marginBottom: '4px' }}>{ticketsOnHold.toLocaleString()}</p>
-                  <p style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{totalTickets ? (ticketsOnHold / totalTickets * 100).toFixed(1) : 0}% of total</p>
+                <div style={{ background: `${'#DE9521'}14`, border: `1px solid ${'#DE9521'}33`, borderRadius: '10px', padding: '14px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#DE9521', marginBottom: '6px' }}>On Hold</p>
+                  <p style={{ fontSize: '26px', fontWeight: 700, color: '#DE9521', lineHeight: 1, marginBottom: '4px' }}>{ticketsOnHold.toLocaleString()}</p>
+                  <p style={{ fontSize: '11px', color: '#DE9521' }}>{totalTickets ? (ticketsOnHold / totalTickets * 100).toFixed(1) : 0}% of total</p>
                 </div>
-                <div style={{ background: '#8b000014', border: '1px solid #8b000033', borderRadius: '10px', padding: '14px' }}>
-                  <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#8b0000', marginBottom: '6px' }}>Escalated</p>
-                  <p style={{ fontSize: '26px', fontWeight: 700, color: '#8b0000', lineHeight: 1, marginBottom: '4px' }}>{ticketsEscalated.toLocaleString()}</p>
+                <div style={{ background: '#C23A2B14', border: '1px solid #C23A2B33', borderRadius: '10px', padding: '14px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#C23A2B', marginBottom: '6px' }}>Escalated</p>
+                  <p style={{ fontSize: '26px', fontWeight: 700, color: '#C23A2B', lineHeight: 1, marginBottom: '4px' }}>{ticketsEscalated.toLocaleString()}</p>
                   <p style={{ fontSize: '11px', color: genSummary && genSummary.esc.stillOpen > 0 ? '#dc2626' : 'var(--muted-foreground)' }}>
                     {genSummary ? `${genSummary.esc.stillOpen} still open (L2)` : `${escalationPct}% rate`}
                   </p>
@@ -773,9 +775,9 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
       {activeTab === 'Performance' && (
         <>
           {/* Filter bar */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            {/* Quick filters */}
-            <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            {/* Quick filters — left */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {QUICK_FILTERS.map(f => (
                 <button key={f.key} onClick={() => applyQuick(f.key)} style={{
                   padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px', border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
@@ -788,9 +790,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
               ))}
             </div>
 
-            <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
-
-            {/* Custom date range */}
+            {/* Custom date range — right */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
               <input type="date" value={fromDate}
@@ -969,21 +969,20 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
       {activeTab === 'Escalations' && (
         <>
           {/* Filter bar */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {QUICK_FILTERS.map(f => (
                 <button key={f.key} onClick={() => applyEscQuick(f.key)} style={{
                   padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px',
                   border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
-                  background: escQuick === f.key ? '#8b0000' : 'transparent',
+                  background: escQuick === f.key ? C.gold : 'transparent',
                   color:      escQuick === f.key ? '#fff'    : 'var(--muted-foreground)',
-                  borderColor:escQuick === f.key ? '#8b0000' : 'var(--border)',
+                  borderColor:escQuick === f.key ? C.gold : 'var(--border)',
                 }}>
                   {f.label}
                 </button>
               ))}
             </div>
-            <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
               <input type="date" value={escFrom} onChange={e => { setEscFrom(e.target.value); setEscQuick('custom') }}
@@ -1008,15 +1007,13 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                   label="Total Escalated"
                   value={escData.kpis.totalEscalated.toLocaleString()}
                   sub={`of ${escData.kpis.totalInPeriod.toLocaleString()} total tickets`}
-                  accent="#8b0000"
-                  border="1px solid #8b000044"
+                  accent={C.darkest}
                 />
                 <KpiCard
                   label="Still Open"
                   value={escData.kpis.stillOpen.toLocaleString()}
                   sub="waiting on L2"
-                  accent={escData.kpis.stillOpen > 0 ? '#dc2626' : C.darkest}
-                  border={escData.kpis.stillOpen > 0 ? '1px solid #dc262644' : undefined}
+                  accent={escData.kpis.stillOpen > 0 ? '#BF1F1F' : C.darkest}
                 />
                 <KpiCard
                   label="Resolved by L2"
@@ -1034,8 +1031,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                   label="Escalation Rate"
                   value={`${escData.kpis.escalationRate}%`}
                   sub="of all tickets in period"
-                  accent="#8b0000"
-                  border="1px solid #8b000044"
+                  accent={C.darkest}
                 />
               </div>
 
@@ -1059,9 +1055,9 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                       <Tooltip content={<EscMonthTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
                       <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
                         formatter={(v) => <span style={{ color: 'var(--muted-foreground)' }}>{v}</span>} />
-                      <Bar dataKey="escalated" name="Escalated" fill="#8b0000" radius={[3, 3, 0, 0]} opacity={0.85} />
+                      <Bar dataKey="escalated" name="Escalated" fill="#BF1F1F" radius={[3, 3, 0, 0]} opacity={0.85} />
                       <Line type="monotone" dataKey="resolved" name="Resolved by L2"
-                        stroke={C.gold} strokeWidth={2.5} dot={{ fill: C.gold, r: 3 }} />
+                        stroke={C.lightest} strokeWidth={2.5} dot={{ fill: C.gold, r: 3 }} />
                     </ComposedChart>
                   </ResponsiveContainer>
                 )}
@@ -1087,7 +1083,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                         <YAxis type="category" dataKey="name" tick={axisStyle} width={110} axisLine={false} tickLine={false}
                           tickFormatter={(v: string) => v.length > 16 ? v.slice(0, 16) + '…' : v} />
                         <Tooltip content={<EscSubcoTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                        <Bar dataKey="escalated" radius={[0, 4, 4, 0]} fill="#8b0000" opacity={0.85}>
+                        <Bar dataKey="escalated" radius={[0, 4, 4, 0]} fill="#BF1F1F" opacity={0.85}>
                           <LabelList dataKey="escalated" position="right"
                             style={{ fontSize: 11, fontWeight: 600, fill: 'var(--muted-foreground)' }} />
                         </Bar>
@@ -1184,21 +1180,20 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
       {activeTab === 'Partners' && (
         <>
           {/* Filter bar */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {QUICK_FILTERS.map(f => (
                 <button key={f.key} onClick={() => applyPtnQuick(f.key)} style={{
                   padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px',
                   border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
-                  background:  ptnQuick === f.key ? C.dark : 'transparent',
+                  background:  ptnQuick === f.key ? C.gold : 'transparent',
                   color:       ptnQuick === f.key ? '#fff' : 'var(--muted-foreground)',
-                  borderColor: ptnQuick === f.key ? C.dark : 'var(--border)',
+                  borderColor: ptnQuick === f.key ? C.gold : 'var(--border)',
                 }}>
                   {f.label}
                 </button>
               ))}
             </div>
-            <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
               <input type="date" value={ptnFrom} onChange={e => { setPtnFrom(e.target.value); setPtnQuick('custom') }}
@@ -1261,7 +1256,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                                       title={count ? `${subco} + ${partner}: ${count} tickets` : undefined}
                                       style={{
                                         padding: '7px 6px', textAlign: 'center', fontWeight: count ? 700 : 400, fontSize: '11px',
-                                        background: count ? `rgba(212,168,83,${intensity.toFixed(2)})` : 'transparent',
+                                        background: count ? `rgba(92,124,166,${intensity.toFixed(2)})` : 'transparent',
                                         color: intensity > 0.55 ? '#fff' : count ? 'var(--foreground)' : 'var(--muted-foreground)',
                                       }}>
                                       {count || ''}
@@ -1436,21 +1431,20 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
       {activeTab === 'Engineers' && (
         <>
           {/* Filter bar */}
-          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {QUICK_FILTERS.map(f => (
                 <button key={f.key} onClick={() => applyEngQuick(f.key)} style={{
                   padding: '5px 12px', fontSize: '12px', fontWeight: 600, borderRadius: '6px',
                   border: '1px solid', cursor: 'pointer', transition: 'all 0.15s',
-                  background:  engQuick === f.key ? C.deep : 'transparent',
+                  background:  engQuick === f.key ? C.gold : 'transparent',
                   color:       engQuick === f.key ? '#fff' : 'var(--muted-foreground)',
-                  borderColor: engQuick === f.key ? C.deep : 'var(--border)',
+                  borderColor: engQuick === f.key ? C.gold : 'var(--border)',
                 }}>
                   {f.label}
                 </button>
               ))}
             </div>
-            <div style={{ width: '1px', height: '22px', background: 'var(--border)', margin: '0 4px' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: 'var(--muted-foreground)' }}>From</span>
               <input type="date" value={engFrom} onChange={e => { setEngFrom(e.target.value); setEngQuick('custom') }}
@@ -1471,8 +1465,8 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
             <>
               {/* ─── Row 1 · KPIs ─────────────────────────────────────────── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '24px' }}>
-                <KpiCard label="Active Engineers"       value={engData.kpis.activeEngineers}        accent={C.deep} />
-                <KpiCard label="Avg Tickets / Engineer" value={engData.kpis.avgTicketsPerEngineer}  sub="across all engineers" />
+                <KpiCard label="Active Engineers"       value={engData.kpis.activeEngineers}        accent={C.gold} />
+                <KpiCard label="Avg Tickets / Engineer" value={engData.kpis.avgTicketsPerEngineer} sub="across all engineers" accent={C.gold}/>
                 <KpiCard label="Top by Volume"          value={engData.kpis.topByVolume}
                   sub={`${engData.kpis.topByVolumeCount.toLocaleString()} tickets`} accent={C.gold} />
                 <KpiCard label="Best Completion Rate"   value={engData.kpis.topByCompletion}
@@ -1646,7 +1640,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                           { label: 'Ongoing',    count: selectedEng.ongoing,    color: C.gold     },
                           { label: 'On Hold',    count: selectedEng.onHold,     color: C.mid      },
                           { label: 'Not Started',count: selectedEng.notStarted, color: C.lightest },
-                          { label: 'Waiting L2', count: selectedEng.waitingL2,  color: '#8b0000'  },
+                          { label: 'Waiting L2', count: selectedEng.waitingL2,  color: '#C23A2B'  },
                         ] as { label: string; count: number; color: string }[]).filter(d => d.count > 0).map(d => {
                           const pct = selectedEng.total ? Math.round(d.count / selectedEng.total * 100) : 0
                           return (

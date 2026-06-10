@@ -19,13 +19,13 @@ const DOC_OPTIONS = [
   { value: 'CREATED',        label: 'Created' },
 ]
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  DONE:             { bg: '#f0fdf4', color: '#16a34a' },
-  DONE_BY_L2:       { bg: '#f0fdf4', color: '#15803d' },
-  ESCALATED_TO_L2:  { bg: '#fef3c7', color: '#d97706' },
-  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb' },
-  ON_HOLD:          { bg: '#f5f3ff', color: '#7c3aed' },
-  NOT_YET_STARTED:  { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const STATUS_COLORS: Record<string, { bg: string; color: string; ring: string }> = {
+  DONE:             { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  DONE_BY_L2:       { bg: '#ecfdf5', color: '#047857', ring: '#a7f3d0' },
+  ESCALATED_TO_L2:  { bg: '#fffbeb', color: '#b45309', ring: '#fde68a' },
+  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb', ring: '#bfdbfe' },
+  ON_HOLD:          { bg: '#f1f5f9', color: '#64748b', ring: 'transparent' },
+  NOT_YET_STARTED:  { bg: '#f5f5f5', color: '#737373', ring: 'transparent' },
 }
 
 interface Ticket {
@@ -161,7 +161,7 @@ export default function QuickStatusEdit({ ticket, issueTopics }: Props) {
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'monospace' }}>{ticket.ticketNumber}</span>
-                <span style={{ padding: '2px 8px', borderRadius: 5, fontSize: 11, fontWeight: 600, background: statusStyle.bg, color: statusStyle.color }}>
+                <span style={{ padding: '2px 10px', borderRadius: 9999, fontSize: 12, fontWeight: 500, background: statusStyle.bg, color: statusStyle.color, boxShadow: `inset 0 0 0 1px ${statusStyle.ring}` }}>
                   {STATUS_OPTIONS.find(s => s.value === ticket.status)?.label ?? ticket.status}
                 </span>
               </div>

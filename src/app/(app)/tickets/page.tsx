@@ -6,26 +6,25 @@ import { Suspense } from 'react'
 import TicketsFilterSaver from './TicketsFilterSaver'
 import QuickStatusEdit from './QuickStatusEdit'
 
-const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
-  DONE:             { bg: '#f0fdf4', color: '#16a34a' },
-  DONE_BY_L2:       { bg: '#f0fdf4', color: '#15803d' },
-  ESCALATED_TO_L2:  { bg: '#fef3c7', color: '#d97706' },
-  IN_PROGRESS:      { bg: '#eff6ff', color: '#2563eb' },
-  ON_HOLD:          { bg: '#f5f3ff', color: '#7c3aed' },
-  NOT_YET_STARTED:  { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const STATUS_STYLES: Record<string, string> = {
+  DONE:             'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  DONE_BY_L2:       'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  ESCALATED_TO_L2:  'bg-amber-50 text-amber-700 ring-amber-200',
+  IN_PROGRESS:      'bg-blue-50 text-blue-600 ring-blue-200',
+  ON_HOLD:          'bg-slate-100 text-slate-500 ring-transparent',
+  NOT_YET_STARTED:  'bg-neutral-100 text-neutral-500 ring-transparent',
 }
 
-const URGENCY_STYLES: Record<string, { bg: string; color: string }> = {
-  HIGH:          { bg: '#fef2f2', color: '#dc2626' },
-  MEDIUM:        { bg: '#fef3c7', color: '#d97706' },
-  LOW:           { bg: '#f0fdf4', color: '#16a34a' },
-  NOT_SPECIFIED: { bg: 'var(--muted)', color: 'var(--muted-foreground)' },
+const URGENCY_STYLES: Record<string, string> = {
+  HIGH:          'bg-red-50 text-red-600 ring-red-200',
+  MEDIUM:        'bg-amber-50 text-amber-700 ring-amber-200',
+  LOW:           'bg-slate-100 text-slate-500 ring-transparent',
+  NOT_SPECIFIED: 'bg-neutral-100 text-neutral-500 ring-transparent',
 }
 
-function Badge({ label, style }: { label: string; style: { bg: string; color: string } }) {
+function Badge({ label, className }: { label: string; className: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium"
-      style={{ background: style.bg, color: style.color }}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset ${className}`}>
       {label.replace(/_/g, ' ')}
     </span>
   )
@@ -196,8 +195,8 @@ export default async function TicketsPage({
           <option value="all">All engineers</option>
           {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
         </select>
-        <button type="submit" className="px-4 py-2 rounded-lg text-sm font-medium"
-          style={{ background: 'var(--secondary)', color: 'var(--foreground)', border: '1px solid var(--border)' }}>
+        <button type="submit" className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[#f5f5f5]"
+          style={{ background: 'var(--card)', color: '#525252', border: '1px solid var(--border)' }}>
           Filter
         </button>
         {hasAnyFilter && (
@@ -244,7 +243,7 @@ export default async function TicketsPage({
             {tickets.map((t, i) => (
               <tr key={t.id}
                 style={{ borderBottom: i < tickets.length - 1 ? '1px solid var(--border)' : undefined }}
-                className="hover:bg-amber-50/40 transition-colors">
+                className="hover:bg-[#fafafa] transition-colors">
                 <td className="px-4 py-3">
                   <Link href={`/tickets/${t.id}`} className="font-medium hover:underline"
                     style={{ color: 'var(--primary)' }}>
@@ -263,10 +262,10 @@ export default async function TicketsPage({
                   ) : <span style={{ color: 'var(--muted-foreground)' }}>—</span>}
                 </td>
                 <td className="px-4 py-3">
-                  <Badge label={t.status} style={STATUS_STYLES[t.status] ?? STATUS_STYLES.NOT_YET_STARTED} />
+                  <Badge label={t.status} className={STATUS_STYLES[t.status] ?? STATUS_STYLES.NOT_YET_STARTED} />
                 </td>
                 <td className="px-4 py-3">
-                  <Badge label={t.urgency} style={URGENCY_STYLES[t.urgency] ?? URGENCY_STYLES.NOT_SPECIFIED} />
+                  <Badge label={t.urgency} className={URGENCY_STYLES[t.urgency] ?? URGENCY_STYLES.NOT_SPECIFIED} />
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--muted-foreground)' }}>
                   {formatDate(t.startDate)}
