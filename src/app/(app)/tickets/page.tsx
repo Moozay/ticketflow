@@ -78,7 +78,7 @@ export default async function TicketsPage({
   if (params.subcontractor) where.subcontractor = params.subcontractor
   if (params.partnerUnknown) where.OR = [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }]
 
-  const [tickets, total, partners, issueTopics, engineers, issueOther, canFixUnknown, partnerUnknown] = await Promise.all([
+  const [tickets, total, partners, issueTopics, engineers, subcontractors, issueOther, canFixUnknown, partnerUnknown] = await Promise.all([
     prisma.ticket.findMany({
       where,
       include: { engineer: { select: { name: true } } },
@@ -92,6 +92,7 @@ export default async function TicketsPage({
     prisma.ticket.groupBy({ by: ['designPartner'], _count: true, orderBy: { _count: { designPartner: 'desc' } }, take: 30 }),
     prisma.issueTopic.findMany({ orderBy: { name: 'asc' }, select: { name: true } }),
     prisma.user.findMany({ where: { active: true, role: 'ENGINEER' }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
+    prisma.ticket.groupBy({ by: ['subcontractor'], where: { isValidTicket: true, archivedAt: null, subcontractor: { not: '' } }, _count: true, orderBy: { _count: { subcontractor: 'desc' } } }),
     prisma.ticket.count({ where: { ...myBase, issueTopic: 'Other' } }),
     prisma.ticket.count({ where: { ...myBase, canUserSolve: 'UNKNOWN' } }),
     prisma.ticket.count({ where: { ...myBase, OR: [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }] } }),
@@ -145,66 +146,79 @@ export default async function TicketsPage({
       )}
 
       {/* Filters */}
-      <form method="GET" className="flex flex-wrap items-center gap-3 mb-5">
-        <div className="relative flex-1 max-w-xs">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted-foreground)' }}>
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input name="q" defaultValue={params.q} placeholder="Search tickets…"
-            className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }} />
+      <form key={[params.q, params.status, params.partner, params.urgency, params.canUserSolve, params.engineerFilter, params.issueTopic, params.subcontractor, params.partnerUnknown, params.sort, params.dir].join('|')} method="GET" className="mb-5 flex flex-col gap-2">
+        {/* Row 1 — search + actions */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted-foreground)' }}>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input name="q" defaultValue={params.q} placeholder="Search tickets…"
+              className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
+              style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }} />
+          </div>
+          <button type="submit" className="px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: 'var(--primary)', color: '#fff' }}>
+            Filter
+          </button>
+          {hasAnyFilter && (
+            <Link href={isAdmin ? '/tickets' : `/tickets?engineerFilter=${engineerId}`}
+              className="px-3 py-2 rounded-lg text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              Clear
+            </Link>
+          )}
         </div>
-        <select name="status" defaultValue={params.status ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">All statuses</option>
-          {['NOT_YET_STARTED','IN_PROGRESS','ON_HOLD','DONE','DONE_BY_L2','ESCALATED_TO_L2'].map(s => (
-            <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
-          ))}
-        </select>
-        <select name="partner" defaultValue={params.partner ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">All partners</option>
-          {partners.map(p => <option key={p.designPartner} value={p.designPartner}>{p.designPartner}</option>)}
-        </select>
-        <select name="urgency" defaultValue={params.urgency ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">All urgencies</option>
-          <option value="HIGH">High</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="LOW">Low</option>
-        </select>
-        <select name="canUserSolve" defaultValue={params.canUserSolve ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">Can user solve (all)</option>
-          <option value="YES">Yes</option>
-          <option value="NO">No</option>
-        </select>
-        <select name="issueTopic" defaultValue={params.issueTopic ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="">All issue topics</option>
-          {issueTopics.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-        </select>
-        <select name="engineerFilter" defaultValue={effectiveEngineerId ?? ''}
-          className="px-3 py-2 rounded-lg text-sm outline-none"
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-          <option value="all">All engineers</option>
-          {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
-        </select>
-        <button type="submit" className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[#f5f5f5]"
-          style={{ background: 'var(--card)', color: '#525252', border: '1px solid var(--border)' }}>
-          Filter
-        </button>
-        {hasAnyFilter && (
-          <Link href={isAdmin ? '/tickets' : `/tickets?engineerFilter=${engineerId}`}
-            className="px-3 py-2 rounded-lg text-sm" style={{ color: 'var(--muted-foreground)' }}>
-            Clear
-          </Link>
-        )}
+        {/* Row 2 — dropdowns */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select name="status" defaultValue={params.status ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
+            <option value="">All statuses</option>
+            {['NOT_YET_STARTED','IN_PROGRESS','ON_HOLD','DONE','DONE_BY_L2','ESCALATED_TO_L2'].map(s => (
+              <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+            ))}
+          </select>
+          {/* Partner + Subcontractor grouped */}
+          <select name="partner" defaultValue={params.partner ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light', borderRight: 'none', borderRadius: '8px 0 0 8px' }}>
+            <option value="">All partners</option>
+            {partners.map(p => <option key={p.designPartner} value={p.designPartner}>{p.designPartner}</option>)}
+          </select>
+          <select name="subcontractor" defaultValue={params.subcontractor ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light', borderRadius: '0 8px 8px 0' }}>
+            <option value="">All subcontractors</option>
+            {subcontractors.map(s => <option key={s.subcontractor} value={s.subcontractor}>{s.subcontractor}</option>)}
+          </select>
+          <select name="urgency" defaultValue={params.urgency ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
+            <option value="">All urgencies</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+          <select name="canUserSolve" defaultValue={params.canUserSolve ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
+            <option value="">Can user solve (all)</option>
+            <option value="YES">Yes</option>
+            <option value="NO">No</option>
+          </select>
+          <select name="issueTopic" defaultValue={params.issueTopic ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
+            <option value="">All issue topics</option>
+            {issueTopics.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+          </select>
+          <select name="engineerFilter" defaultValue={effectiveEngineerId ?? ''}
+            className="px-3 py-2 rounded-lg text-sm outline-none"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
+            <option value="all">All engineers</option>
+            {engineers.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+          </select>
+        </div>
       </form>
 
       {/* Table */}

@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   AreaChart, Area, CartesianGrid,
@@ -34,9 +33,9 @@ interface Props {
   }
   byIssueTopic: { name: string; value: number }[]
   byPartner: { name: string; canFix: number; cannotFix: number }[]
+  bySubcontractor: { name: string; canFix: number; cannotFix: number }[]
   partnerSummary: PartnerSummary[]
   byStatus: { name: string; value: number }[]
-  byUrgency: { name: string; value: number }[]
   byCanUserSolve: { name: string; value: number }[]
   byIssueType: { name: string; value: number }[]
   byEngineer: { name: string; value: number }[]
@@ -143,20 +142,14 @@ const TrendTooltip = ({ active, payload, label }: any) => {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function DashboardClient(initial: Props) {
-  const router = useRouter()
+  const { stats, byIssueTopic, bySubcontractor, partnerSummary, byStatus, byCanUserSolve, byIssueType, byEngineer, monthlyTrend } = initial
 
-  const { stats, byIssueTopic, byPartner, partnerSummary, byStatus, byUrgency, byCanUserSolve, byIssueType, byEngineer, monthlyTrend } = initial
-
-  const resolutionRate = stats.totalTickets ? Math.round(stats.resolvedTickets / stats.totalTickets * 100) : 0
   const escalationRate = stats.totalTickets ? (stats.escalationCount / stats.totalTickets * 100).toFixed(1) : '0'
   const selfSolvePct = stats.totalTickets ? Math.round(stats.selfSolvableCount / stats.totalTickets * 100) : 0
 
   const STATUS_COLORS: Record<string, string> = {
     'Not Started': '#CBD5E1', 'In Progress': '#5C7CA6', 'On Hold': '#94A3B8',
     'Done': '#6B9080', 'Done (L2)': '#6B9080', 'Escalated': '#C23A2B',
-  }
-  const URGENCY_COLORS: Record<string, string> = {
-    'High': '#C23A2B', 'Medium': '#C9A66B', 'Low': '#94A3B8',
   }
   const CAN_FIX_COLORS: Record<string, string> = {
     'Yes': '#6B9080', 'No': '#C23A2B',
@@ -179,9 +172,8 @@ export default function DashboardClient(initial: Props) {
       </div>
 
       {/* ── KPI Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '36px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '36px' }}>
         <KpiCard label="Total Tickets" value={stats.totalTickets.toLocaleString()} />
-        <KpiCard label="Resolved" value={`${resolutionRate}%`} sub={`${stats.resolvedTickets.toLocaleString()} tickets`} accent={C.darkest} />
         <KpiCard label="Escalation Rate" value={`${escalationRate}%`} sub={`${stats.escalationCount} escalated`} accent="#C23A2B" />
         <KpiCard label="User Can Fix" value={`${selfSolvePct}%`} sub={`${stats.selfSolvableCount.toLocaleString()} tickets`} accent={C.dark} />
       </div>
@@ -189,12 +181,12 @@ export default function DashboardClient(initial: Props) {
       {/* ── 1. Partner Analysis ── */}
       <Section
         title="Partner Analysis"
-        description="Ticket volume per design partner broken down by user self-service potential"
+        description="Ticket volume per subcontractor broken down by user self-service potential"
       >
-        {/* Stacked bar */}
+        {/* Subcontractor stacked bar */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-            <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)' }}>Tickets by Design Partner — Can User Fix?</p>
+            <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)' }}>Tickets by Subcontractor — Can User Fix?</p>
             <div style={{ display: 'flex', gap: '20px' }}>
               {[['User can fix', C.gold], ['Cannot fix', C.darkest]].map(([label, color]) => (
                 <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--muted-foreground)' }}>
@@ -204,16 +196,8 @@ export default function DashboardClient(initial: Props) {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={byPartner.length * 34 + 20}>
-            <BarChart
-              layout="vertical"
-              data={byPartner}
-              margin={{ left: 4, right: 40, top: 4, bottom: 4 }}
-              style={{ cursor: 'pointer' }}
-              onClick={(data: any) => {
-                if (data?.activeLabel) router.push(`/dashboard/partners/${encodeURIComponent(data.activeLabel)}`)
-              }}
-            >
+          <ResponsiveContainer width="100%" height={bySubcontractor.length * 34 + 20}>
+            <BarChart layout="vertical" data={bySubcontractor} margin={{ left: 4, right: 40, top: 4, bottom: 4 }}>
               <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
               <YAxis type="category" dataKey="name" tick={axisStyle} width={140} axisLine={false} tickLine={false}
                 tickFormatter={(v: string) => v.length > 20 ? v.slice(0, 20) + '…' : v} />
@@ -364,12 +348,12 @@ export default function DashboardClient(initial: Props) {
         </ChartCard>
       </Section>
 
-      {/* ── 4. Status & Urgency ── */}
+      {/* ── 4. Status Breakdown ── */}
       <Section
-        title="Status & Urgency Breakdown"
-        description="Current state of all open and closed tickets, and how urgency levels are distributed across the portfolio."
+        title="Status Breakdown"
+        description="Current state of all open and closed tickets."
       >
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <ChartCard title="Ticket Status" sub="Current status of all tickets">
             <ResponsiveContainer width="100%" height={200}>
               <BarChart layout="vertical" data={byStatus} margin={{ left: 4, right: 50, top: 0, bottom: 0 }}>
@@ -378,19 +362,6 @@ export default function DashboardClient(initial: Props) {
                 <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {byStatus.map(d => <Cell key={d.name} fill={STATUS_COLORS[d.name] ?? C.gold} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartCard>
-
-          <ChartCard title="Urgency Distribution" sub="Priority levels across all tickets">
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart layout="vertical" data={byUrgency} margin={{ left: 4, right: 50, top: 0, bottom: 0 }}>
-                <XAxis type="number" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={axisStyle} width={90} axisLine={false} tickLine={false} />
-                <Tooltip content={<SimpleTooltip />} cursor={{ fill: 'var(--muted)' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                  {byUrgency.map(d => <Cell key={d.name} fill={URGENCY_COLORS[d.name] ?? C.gold} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

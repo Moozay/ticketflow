@@ -75,7 +75,7 @@ export default async function DocumentationPage() {
           </p>
         </div>
 
-        {role === 'ADMIN' && <AddDocLinkForm />}
+        {(role === 'ADMIN' || role === 'ENGINEER') && <AddDocLinkForm />}
       </div>
 
       {docs.length === 0 && (
@@ -128,30 +128,46 @@ export default async function DocumentationPage() {
                       {doc.title}
                     </p>
                   </div>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="Open link"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
-                      background: 'var(--accent-bg, var(--muted))',
-                      color: 'var(--accent-fg, var(--primary))',
-                      flexShrink: 0,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                  </a>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                    {(role === 'ADMIN' || role === 'ENGINEER') && (
+                      <AddDocLinkForm
+                        doc={doc}
+                        trigger={
+                          <span
+                            title="Edit"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: '32px', height: '32px', borderRadius: '8px',
+                              background: 'var(--muted)', color: 'var(--muted-foreground)',
+                            }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </span>
+                        }
+                      />
+                    )}
+                    <a
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open link"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: '32px', height: '32px', borderRadius: '8px',
+                        background: 'var(--accent-bg, var(--muted))', color: 'var(--accent-fg, var(--primary))',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </a>
+                  </div>
                 </div>
 
                 {doc.description && (

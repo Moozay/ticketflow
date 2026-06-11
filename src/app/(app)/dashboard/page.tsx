@@ -16,8 +16,8 @@ export default async function DashboardPage() {
     byIssueTopic,
     byPartnerBreakdown,
     byPartnerStatusRaw,
+    bySubcontractorBreakdown,
     byStatus,
-    byUrgency,
     byCanUserSolve,
     byIssueType,
     byEngineer,
@@ -34,8 +34,8 @@ export default async function DashboardPage() {
     prisma.ticket.groupBy({ by: ['issueTopic'], where: { isValidTicket: true, issueTopic: { not: null } }, _count: true, orderBy: { _count: { issueTopic: 'desc' } }, take: 15 }),
     prisma.ticket.groupBy({ by: ['designPartner', 'canUserSolve'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['designPartner', 'status'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
+    prisma.ticket.groupBy({ by: ['subcontractor', 'canUserSolve'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['status'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
-    prisma.ticket.groupBy({ by: ['urgency'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['canUserSolve'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['issueType'], where: { isValidTicket: true, archivedAt: null }, _count: true }),
     prisma.ticket.groupBy({ by: ['engineerId'], where: { isValidTicket: true, archivedAt: null }, _count: true, orderBy: { _count: { engineerId: 'desc' } } }),
@@ -83,6 +83,22 @@ export default async function DashboardPage() {
 
   const byPartnerStacked = partnerSummary.map(p => ({ name: p.name, canFix: p.canFix, cannotFix: p.cannotFix }))
 
+  // Subcontractor can/cannot fix
+  const subcoCF: Record<string, { canFix: number; cannotFix: number }> = {}
+  for (const row of bySubcontractorBreakdown) {
+    if (!row.subcontractor) continue
+    const key = row.subcontractor
+    if (!subcoCF[key]) subcoCF[key] = { canFix: 0, cannotFix: 0 }
+    if (row.canUserSolve === 'YES' || row.canUserSolve === 'PARTIALLY') {
+      subcoCF[key].canFix += row._count
+    } else {
+      subcoCF[key].cannotFix += row._count
+    }
+  }
+  const bySubcontractorStacked = Object.entries(subcoCF)
+    .map(([name, { canFix, cannotFix }]) => ({ name, canFix, cannotFix }))
+    .sort((a, b) => (b.canFix + b.cannotFix) - (a.canFix + a.cannotFix))
+
   const engineers = await prisma.user.findMany({ select: { id: true, name: true } })
   const engineerMap = Object.fromEntries(engineers.map(e => [e.id, e.name]))
 
@@ -90,8 +106,6 @@ export default async function DashboardPage() {
     NOT_YET_STARTED: 'Not Started', IN_PROGRESS: 'In Progress', ON_HOLD: 'On Hold',
     DONE: 'Done', DONE_BY_L2: 'Done (L2)', ESCALATED_TO_L2: 'Escalated',
   }
-  const URGENCY_ORDER = ['High', 'Medium', 'Low', 'Not Specified']
-  const URGENCY_LABELS: Record<string, string> = { HIGH: 'High', MEDIUM: 'Medium', LOW: 'Low' }
   const CAN_FIX_LABELS: Record<string, string> = { YES: 'Yes', NO: 'No' }
 
   return (
@@ -103,11 +117,9 @@ export default async function DashboardPage() {
       }}
       byIssueTopic={byIssueTopic.map(d => ({ name: d.issueTopic ?? 'Other', value: d._count }))}
       byPartner={byPartnerStacked}
+      bySubcontractor={bySubcontractorStacked}
       partnerSummary={partnerSummary}
       byStatus={byStatus.map(d => ({ name: STATUS_LABELS[d.status] ?? d.status, value: d._count }))}
-      byUrgency={byUrgency
-        .map(d => ({ name: URGENCY_LABELS[d.urgency] ?? d.urgency, value: d._count }))
-        .sort((a, b) => URGENCY_ORDER.indexOf(a.name) - URGENCY_ORDER.indexOf(b.name))}
       byCanUserSolve={byCanUserSolve.map(d => ({ name: CAN_FIX_LABELS[d.canUserSolve] ?? d.canUserSolve, value: d._count }))}
       byIssueType={byIssueType.map(d => ({ name: d.issueType === 'MARLIN_ISSUE' ? 'Marlin' : 'Comsof', value: d._count }))}
       byEngineer={byEngineer.map(d => ({ name: engineerMap[d.engineerId] ?? d.engineerId, value: d._count }))}

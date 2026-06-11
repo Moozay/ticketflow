@@ -2,58 +2,43 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 
-type Params = { params: Promise<{ id: string }> }
-
-export async function PATCH(req: NextRequest, { params }: Params) {
+async function canManage() {
   const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if ((session.user as any)?.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 })
-  }
+  if (!session) return false
+  const role = (session.user as any)?.role
+  return role === 'ADMIN' || role === 'ENGINEER'
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await canManage())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
   const body = await req.json()
+  const { title, url, section, description, order } = body
 
-  const data: Record<string, unknown> = {}
+  if (!title?.trim()) return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+  if (!url?.trim()) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+  try { new URL(url) } catch { return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 }) }
 
-  if ('title' in body) {
-    if (!body.title?.trim()) return NextResponse.json({ error: 'Title cannot be empty' }, { status: 400 })
-    data.title = body.title.trim()
-  }
-  if ('url' in body) {
-    if (!body.url?.trim()) return NextResponse.json({ error: 'URL cannot be empty' }, { status: 400 })
-    try { new URL(body.url) } catch { return NextResponse.json({ error: 'Invalid URL' }, { status: 400 }) }
-    data.url = body.url.trim()
-  }
-  if ('section' in body) data.section = body.section?.trim() || null
-  if ('description' in body) data.description = body.description?.trim() || null
-  if ('order' in body) data.order = typeof body.order === 'number' ? body.order : parseInt(body.order) || 0
+  const doc = await prisma.documentation.update({
+    where: { id },
+    data: {
+      title: title.trim(),
+      url: url.trim(),
+      section: section?.trim() || null,
+      description: description?.trim() || null,
+      order: typeof order === 'number' ? order : 0,
+    },
+  })
 
-  if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
-  }
-
-  try {
-    const doc = await prisma.documentation.update({ where: { id }, data })
-    return NextResponse.json(doc)
-  } catch {
-    return NextResponse.json({ error: 'Documentation link not found' }, { status: 404 })
-  }
+  return NextResponse.json(doc)
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if ((session.user as any)?.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Forbidden — admin only' }, { status: 403 })
-  }
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await canManage())) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await params
+  await prisma.documentation.delete({ where: { id } })
 
-  try {
-    await prisma.documentation.delete({ where: { id } })
-    return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json({ error: 'Documentation link not found' }, { status: 404 })
-  }
+  return NextResponse.json({ ok: true })
 }

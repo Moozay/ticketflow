@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
   Tooltip, ResponsiveContainer, LabelList,
@@ -371,11 +371,23 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
   useEffect(() => {
     if (activeTab !== 'Partners' || !ptnFrom || !ptnTo) return
     setPtnLoading(true)
+    setMatrixScroll(0)
+    setMatrixMaxScroll(0)
     fetch(`/api/admin/partners?from=${ptnFrom}&to=${ptnTo}`)
       .then(r => r.json())
       .then(data => { setPtnData(data); setPtnLoading(false) })
       .catch(() => setPtnLoading(false))
   }, [activeTab, ptnFrom, ptnTo])
+
+  useEffect(() => {
+    if (!matrixScrollRef.current) return
+    const el = matrixScrollRef.current
+    const measure = () => setMatrixMaxScroll(el.scrollWidth - el.clientWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ptnData])
 
   function applyPtnQuick(key: string) {
     setPtnQuick(key)
@@ -383,6 +395,10 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
     setPtnFrom(from)
     setPtnTo(to)
   }
+
+  const matrixScrollRef = useRef<HTMLDivElement>(null)
+  const [matrixScroll, setMatrixScroll] = useState(0)
+  const [matrixMaxScroll, setMatrixMaxScroll] = useState(0)
 
   // ── Engineers tab state ────────────────────────────────────────────────────
   const [engFrom,     setEngFrom]     = useState('')
@@ -433,8 +449,8 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
 
   // Partners tab derived values (computed before render to keep JSX clean)
   const ptnMaxTotal     = ptnData ? Math.max(...ptnData.bySubcontractor.map(s => s.total), 1) : 1
-  const ptnMatrixSubcos = ptnData ? ptnData.bySubcontractor.slice(0, 10).map(s => s.name) : []
-  const ptnMatrixPtrs   = ptnData ? ptnData.byDesignPartner.slice(0, 8).map(p => p.name)  : []
+  const ptnMatrixSubcos = ptnData ? ptnData.bySubcontractor.map(s => s.name) : []
+  const ptnMatrixPtrs   = ptnData ? ptnData.byDesignPartner.map(p => p.name) : []
   const ptnMatrixLookup: Record<string, number> = {}
   if (ptnData) { for (const m of ptnData.matrix) ptnMatrixLookup[`${m.subco}|||${m.designPartner}`] = m.count }
   const ptnMatrixMax = ptnMatrixSubcos.length
@@ -1212,24 +1228,42 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
 
           {!ptnLoading && ptnData && (
             <>
-              {/* ─── Row 1 · Subco × Partner matrix + KPI cards ─────────── */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 260px', gap: '16px', alignItems: 'start', marginBottom: '16px' }}>
+              {/* ─── Row 1 · KPI cards ───────────────────────────────────── */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                <KpiCard label="Active Subcontractors"  value={ptnData.kpis.totalSubcos}         accent={C.dark} />
+                <KpiCard label="Design Partners"        value={ptnData.kpis.totalDesignPartners} accent={C.mid} />
+                <KpiCard label="Top Subcontractor"      value={ptnData.kpis.topSubco}
+                  sub={`${ptnData.kpis.topSubcoCount.toLocaleString()} tickets`} accent={C.gold} />
+                <KpiCard label="Avg Tickets / Subco"    value={ptnData.kpis.avgTicketsPerSubco}
+                  sub="across all subcontractors" />
+              </div>
+
+              {/* ─── Row 2 · Subco × Partner matrix (full width) ─────────── */}
+              <div style={{ marginBottom: '16px' }}>
 
                 {/* Subco × Design Partner matrix */}
-                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px' }}>
+                <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', minWidth: 0 }}>
                   <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '2px' }}>Subcontractor × Design Partner</p>
                   <p style={{ fontSize: '11px', color: 'var(--muted-foreground)', marginBottom: '16px' }}>
-                    Ticket count per combination — darker cell = higher volume
-                    {ptnMatrixSubcos.length < ptnData.bySubcontractor.length && ` · top ${ptnMatrixSubcos.length} subcos shown`}
+                    Ticket count per combination — darker cell = higher volume · all subcos and partners shown
                   </p>
                   {ptnMatrixSubcos.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted-foreground)', fontSize: '13px' }}>No data</div>
                   ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ borderCollapse: 'collapse', fontSize: '11px', width: '100%' }}>
+                    <>
+                    <div
+                      ref={matrixScrollRef}
+                      style={{ overflowX: 'auto' }}
+                      onScroll={e => {
+                        const el = e.currentTarget
+                        setMatrixScroll(el.scrollLeft)
+                        setMatrixMaxScroll(el.scrollWidth - el.clientWidth)
+                      }}
+                    >
+                      <table style={{ borderCollapse: 'collapse', fontSize: '11px', width: 'max-content', minWidth: '100%' }}>
                         <thead>
                           <tr>
-                            <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, fontSize: '10px', color: 'var(--muted-foreground)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' }}>
+                            <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, fontSize: '10px', color: 'var(--muted-foreground)', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap', position: 'sticky', left: 0, background: 'var(--card)', zIndex: 2 }}>
                               Subco ╲ Partner
                             </th>
                             {ptnMatrixPtrs.map(p => (
@@ -1245,7 +1279,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                             const subcoTotal = ptnData.bySubcontractor.find(s => s.name === subco)?.total ?? 0
                             return (
                               <tr key={subco} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '7px 8px', fontWeight: 600, fontSize: '11px', color: 'var(--foreground)', whiteSpace: 'nowrap', background: si % 2 !== 0 ? 'rgba(0,0,0,0.018)' : 'transparent' }}>
+                                <td style={{ padding: '7px 8px', fontWeight: 600, fontSize: '11px', color: 'var(--foreground)', whiteSpace: 'nowrap', background: si % 2 !== 0 ? 'var(--muted)' : 'var(--card)', position: 'sticky', left: 0, zIndex: 1 }}>
                                   {subco.length > 14 ? subco.slice(0, 13) + '…' : subco}
                                 </td>
                                 {ptnMatrixPtrs.map(partner => {
@@ -1271,7 +1305,7 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                           })}
                           {/* Column totals */}
                           <tr style={{ borderTop: '2px solid var(--border)', background: 'rgba(0,0,0,0.02)' }}>
-                            <td style={{ padding: '7px 8px', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)' }}>Total</td>
+                            <td style={{ padding: '7px 8px', fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)', background: 'rgba(0,0,0,0.02)', position: 'sticky', left: 0, zIndex: 1 }}>Total</td>
                             {ptnMatrixPtrs.map(partner => {
                               const colTotal = ptnMatrixSubcos.reduce((s, subco) => s + (ptnMatrixLookup[`${subco}|||${partner}`] ?? 0), 0)
                               return (
@@ -1287,37 +1321,46 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                         </tbody>
                       </table>
                     </div>
+                    </>
                   )}
                 </div>
 
-                {/* 4 KPI cards stacked vertically */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <KpiCard label="Active Subcontractors"  value={ptnData.kpis.totalSubcos}         accent={C.dark} />
-                  <KpiCard label="Design Partners"        value={ptnData.kpis.totalDesignPartners} accent={C.mid} />
-                  <KpiCard label="Top Subcontractor"      value={ptnData.kpis.topSubco}
-                    sub={`${ptnData.kpis.topSubcoCount.toLocaleString()} tickets`} accent={C.gold} />
-                  <KpiCard label="Avg Tickets / Subco"    value={ptnData.kpis.avgTicketsPerSubco}
-                    sub="across all subcontractors" />
-                </div>
               </div>
 
-              {/* ─── Row 2 · Subcontractor Scorecard (full width) ─────────── */}
+              {/* ─── Row 3 · Subcontractor Scorecard (full width) ─────────── */}
               <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', marginBottom: '16px' }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '2px' }}>Subcontractor Scorecard</p>
                 <p style={{ fontSize: '11px', color: 'var(--muted-foreground)', marginBottom: '20px' }}>
                   Performance per subcontractor — volume, completion rate, avg resolution time, and escalation rate
                 </p>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '44px' }} />
+                      <col style={{ width: '140px' }} />
+                      <col />
+                      <col style={{ width: '72px' }} />
+                      <col />
+                      <col style={{ width: '88px' }} />
+                      <col style={{ width: '88px' }} />
+                    </colgroup>
                     <thead>
                       <tr style={{ borderBottom: '2px solid var(--border)' }}>
-                        {['#', 'Subcontractor', 'Volume', 'Done', 'Done %', 'Avg Days', 'Esc Rate'].map(h => (
-                          <th key={h} style={{
+                        {[
+                          { label: '#',              align: 'center' },
+                          { label: 'Subcontractor',  align: 'left'   },
+                          { label: 'Volume',         align: 'left'   },
+                          { label: 'Done',           align: 'center' },
+                          { label: 'Done %',         align: 'left'   },
+                          { label: 'Avg Days',       align: 'center' },
+                          { label: 'Esc Rate',       align: 'center' },
+                        ].map(h => (
+                          <th key={h.label} style={{
                             padding: '8px 12px', fontWeight: 700, fontSize: '10px',
                             textTransform: 'uppercase', letterSpacing: '0.07em',
                             color: 'var(--muted-foreground)', whiteSpace: 'nowrap',
-                            textAlign: ['#', 'Done', 'Avg Days', 'Esc Rate'].includes(h) ? 'center' : 'left',
-                          }}>{h}</th>
+                            textAlign: h.align as any,
+                          }}>{h.label}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1328,22 +1371,22 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
                         return (
                           <tr key={s.name} style={{ borderBottom: '1px solid var(--border)', background: idx % 2 !== 0 ? 'rgba(0,0,0,0.018)' : 'transparent' }}>
                             <td style={{ padding: '10px 12px', textAlign: 'center', color: 'var(--muted-foreground)', fontWeight: 600, fontSize: '11px' }}>{idx + 1}</td>
-                            <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap' }}>{s.name}</td>
-                            <td style={{ padding: '10px 12px', minWidth: '150px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ flex: 1, height: '5px', background: 'var(--muted)', borderRadius: '3px', overflow: 'hidden', minWidth: '70px' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ flex: 1, height: '6px', background: 'var(--muted)', borderRadius: '3px', overflow: 'hidden' }}>
                                   <div style={{ height: '100%', width: `${s.total / ptnMaxTotal * 100}%`, background: C.gold, borderRadius: '3px' }} />
                                 </div>
-                                <span style={{ fontWeight: 700, color: 'var(--foreground)', whiteSpace: 'nowrap' }}>{s.total.toLocaleString()}</span>
+                                <span style={{ fontWeight: 700, color: 'var(--foreground)', whiteSpace: 'nowrap', minWidth: '28px', textAlign: 'right' }}>{s.total.toLocaleString()}</span>
                               </div>
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--foreground)' }}>{s.done.toLocaleString()}</td>
-                            <td style={{ padding: '10px 12px', minWidth: '120px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <div style={{ flex: 1, height: '5px', background: 'var(--muted)', borderRadius: '3px', overflow: 'hidden', minWidth: '60px' }}>
+                            <td style={{ padding: '10px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ flex: 1, height: '6px', background: 'var(--muted)', borderRadius: '3px', overflow: 'hidden' }}>
                                   <div style={{ height: '100%', width: `${s.donePct}%`, background: doneColor, borderRadius: '3px', transition: 'width 0.3s' }} />
                                 </div>
-                                <span style={{ fontWeight: 700, color: doneColor, whiteSpace: 'nowrap' }}>{s.donePct}%</span>
+                                <span style={{ fontWeight: 700, color: doneColor, whiteSpace: 'nowrap', minWidth: '34px', textAlign: 'right' }}>{s.donePct}%</span>
                               </div>
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600, color: 'var(--foreground)' }}>
