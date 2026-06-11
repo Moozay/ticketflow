@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
       AND t."archivedAt"   IS NULL
       AND t."startDate"    >= ${fromDate}
       AND t."startDate"    <= ${toDate}
+      AND u.id            != 'cmpwm2jzy0003ms33q8t7tqao'
     GROUP BY u.id, u.name
     ORDER BY total DESC
   `
