@@ -12,6 +12,7 @@ enum Role {
   ADMIN
   ENGINEER
   EXTERN
+  EXTERN_PLUS
 }
 
 enum TicketStatus {

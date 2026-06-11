@@ -23,11 +23,14 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl)
   }
 
-  // EXTERN users can only access /dashboard and /dashboard/partners/*
+  // EXTERN users: dashboard only. EXTERN_PLUS: dashboard + internal dashboard.
   const role = (session.user as any)?.role
-  if (role === 'EXTERN') {
-    const allowed = nextUrl.pathname === '/dashboard' ||
-      nextUrl.pathname.startsWith('/dashboard/partners')
+  if (role === 'EXTERN' || role === 'EXTERN_PLUS') {
+    const allowed =
+      nextUrl.pathname === '/dashboard' ||
+      nextUrl.pathname.startsWith('/dashboard/partners') ||
+      (role === 'EXTERN_PLUS' && nextUrl.pathname === '/admin/internal-dashboard') ||
+      (role === 'EXTERN_PLUS' && nextUrl.pathname.startsWith('/api/admin/'))
     if (!allowed) {
       return NextResponse.redirect(new URL('/dashboard', nextUrl))
     }

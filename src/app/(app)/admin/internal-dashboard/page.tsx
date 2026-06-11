@@ -14,7 +14,8 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default async function InternalDashboardPage() {
   const session = await auth()
-  if ((session?.user as any)?.role !== 'ADMIN') redirect('/dashboard')
+  const role = (session?.user as any)?.role
+  if (role !== 'ADMIN' && role !== 'EXTERN_PLUS') redirect('/dashboard')
 
   const [byStatusRaw, bySubcontractorRaw] = await Promise.all([
     prisma.ticket.groupBy({

@@ -138,6 +138,7 @@ export default function NewUserForm() {
                   <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
                   <option value="EXTERN">Extern</option>
+                  <option value="EXTERN_PLUS">Extern+</option>
                 </select>
               </div>
               <div>

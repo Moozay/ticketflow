@@ -86,6 +86,8 @@ export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const isAdmin = user.role === 'ADMIN'
   const isExtern = user.role === 'EXTERN'
+  const isExternInternal = user.role === 'EXTERN_PLUS'
+  const isExternLike = isExtern || isExternInternal
 
   return (
     <aside className="flex flex-col w-56 shrink-0 h-screen sticky top-0" style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--sidebar-accent)' }}>
@@ -108,10 +110,10 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {nav.filter(item => !isExtern || item.href === '/dashboard').map(item => {
+        {nav.filter(item => !isExternLike || item.href === '/dashboard').map(item => {
           // Tickets link uses smart component that restores last filter
           if (item.href === '/tickets') {
-            return <TicketsNavLink key="/tickets" icon={item.icon} isExtern={isExtern} />
+            return <TicketsNavLink key="/tickets" icon={item.icon} isExtern={isExternLike} />
           }
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
@@ -128,12 +130,12 @@ export default function Sidebar({ user }: SidebarProps) {
           )
         })}
 
-        {isAdmin && (
+        {(isAdmin || isExternInternal) && (
           <>
             <div className="pt-4 pb-1 px-3">
               <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#a3a3a3' }}>Admin</p>
             </div>
-            {adminNav.map(item => {
+            {adminNav.filter(item => isAdmin || item.href === '/admin/internal-dashboard').map(item => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link key={item.href} href={item.href}

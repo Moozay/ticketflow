@@ -92,7 +92,7 @@ export default async function AdminUsersPage() {
                   <span
                     className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
                     style={{
-                      background: user.role === 'ADMIN' ? '#7c3aed' : user.role === 'EXTERN' ? '#64748b' : '#2563eb',
+                      background: user.role === 'ADMIN' ? '#7c3aed' : user.role === 'EXTERN' ? '#64748b' : user.role === 'EXTERN_PLUS' ? '#0891b2' : '#2563eb',
                     }}
                   >
                     {user.role}

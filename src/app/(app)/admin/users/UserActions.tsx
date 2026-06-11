@@ -169,6 +169,8 @@ export default function UserActions({ userId, userName, isActive, user }: Props)
                 <select style={inputStyle} value={form.role} onChange={e => set('role', e.target.value)}>
                   <option value="ENGINEER">Engineer</option>
                   <option value="ADMIN">Admin</option>
+                  <option value="EXTERN">Extern</option>
+                  <option value="EXTERN_PLUS">Extern+</option>
                 </select>
               </div>
               <div>

@@ -25,7 +25,8 @@ type MatrixRow = {
 
 export async function GET(req: NextRequest) {
   const session = await auth()
-  if ((session?.user as any)?.role !== 'ADMIN') {
+  const role = (session?.user as any)?.role
+  if (role !== 'ADMIN' && role !== 'EXTERN_PLUS') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
