@@ -25,7 +25,7 @@ export default async function InternalDashboardPage() {
     }),
     prisma.ticket.groupBy({
       by: ['subcontractor'],
-      where: { isValidTicket: true, archivedAt: null },
+      where: { isValidTicket: true, archivedAt: null, subcontractor: { not: 'Wyre ( OSC UPDATE )' } },
       _count: true,
       orderBy: { _count: { subcontractor: 'desc' } },
     }),

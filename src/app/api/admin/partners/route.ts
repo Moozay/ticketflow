@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
         AND "archivedAt"   IS NULL
         AND "startDate"    >= ${fromDate}
         AND "startDate"    <= ${toDate}
+        AND subcontractor  != 'Wyre ( OSC UPDATE )'
       GROUP BY subcontractor
       ORDER BY total DESC
     `,
@@ -81,6 +82,7 @@ export async function GET(req: NextRequest) {
         AND "archivedAt"   IS NULL
         AND "startDate"    >= ${fromDate}
         AND "startDate"    <= ${toDate}
+        AND "designPartner" != 'Wyre ( OSC UPDATE )'
       GROUP BY "designPartner"
       ORDER BY total DESC
     `,
@@ -96,6 +98,8 @@ export async function GET(req: NextRequest) {
         AND "archivedAt"   IS NULL
         AND "startDate"    >= ${fromDate}
         AND "startDate"    <= ${toDate}
+        AND subcontractor  != 'Wyre ( OSC UPDATE )'
+        AND "designPartner" != 'Wyre ( OSC UPDATE )'
       GROUP BY subcontractor, "designPartner"
       ORDER BY count DESC
     `,

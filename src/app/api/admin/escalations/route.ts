@@ -99,6 +99,7 @@ export async function GET(req: NextRequest) {
         AND status::text IN ('ESCALATED_TO_L2', 'DONE_BY_L2')
         AND "startDate" >= ${fromDate}
         AND "startDate" <= ${toDate}
+        AND subcontractor != 'Wyre ( OSC UPDATE )'
       GROUP BY subcontractor
       ORDER BY escalated DESC
     `,
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
     // Total tickets per subcontractor in period (to compute escalation %)
     prisma.ticket.groupBy({
       by: ['subcontractor'],
-      where: { isValidTicket: true, archivedAt: null, startDate: { gte: fromDate, lte: toDate } },
+      where: { isValidTicket: true, archivedAt: null, startDate: { gte: fromDate, lte: toDate }, subcontractor: { not: 'Wyre ( OSC UPDATE )' } },
       _count: true,
     }),
 

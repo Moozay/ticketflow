@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
@@ -33,7 +34,7 @@ function Badge({ label, className }: { label: string; className: string }) {
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; issueTopic?: string; subcontractor?: string; partnerUnknown?: string; mine?: string; sort?: string; dir?: string; page?: string }>
+  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; issueTopic?: string; subcontractor?: string; partnerUnknown?: string; invalidCombo?: string; mine?: string; sort?: string; dir?: string; page?: string }>
 }) {
   const params = await searchParams
   const session = await auth()
@@ -44,7 +45,7 @@ export default async function TicketsPage({
   // If engineer and no engineerFilter set, default to their own tickets
   const hasAnyFilter = !!(params.q || params.status || params.partner || params.urgency ||
     params.canUserSolve || params.engineerFilter || params.issueTopic ||
-    params.subcontractor || params.partnerUnknown || params.sort)
+    params.subcontractor || params.partnerUnknown || params.invalidCombo || params.sort)
   // 'all' = explicit "show all engineers"; undefined/absent = default to own for engineers
   const effectiveEngineerId = params.engineerFilter === 'all'
     ? undefined
@@ -59,7 +60,7 @@ export default async function TicketsPage({
   const base = { isValidTicket: true, archivedAt: null }
   const myBase = isAdmin ? base : { ...base, engineerId }
   // When a correction filter is active and user is engineer, scope to their own tickets
-  const correctionActive = !!(params.issueTopic || params.canUserSolve || params.partnerUnknown)
+  const correctionActive = !!(params.issueTopic || params.canUserSolve || params.partnerUnknown || params.invalidCombo)
   const where: any = { ...base, ...(correctionActive && !isAdmin && params.mine === '1' ? { engineerId } : {}) }
   if (params.q) {
     where.OR = [
@@ -78,7 +79,40 @@ export default async function TicketsPage({
   if (params.subcontractor) where.subcontractor = params.subcontractor
   if (params.partnerUnknown) where.OR = [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }]
 
-  const [tickets, total, partners, issueTopics, engineers, subcontractors, issueOther, canFixUnknown, partnerUnknown] = await Promise.all([
+  const INVALID_COMBO_CONDITION = Prisma.sql`
+    LOWER(subcontractor) IN ('unit-t','jacops','equans','cas-vos','ptm','zte','denys','apk','constructel','fyber49','besix','hubicon','a-net','circet')
+    AND NOT (
+      (LOWER(subcontractor) = 'unit-t'       AND LOWER("designPartner") IN ('unit-t','yungo','esc','byon'))
+      OR (LOWER(subcontractor) = 'jacops'    AND LOWER("designPartner") IN ('jacops','cyient'))
+      OR (LOWER(subcontractor) = 'equans'    AND LOWER("designPartner") = 'equans')
+      OR (LOWER(subcontractor) = 'cas-vos'   AND LOWER("designPartner") IN ('cas-vos','heta','keen wise'))
+      OR (LOWER(subcontractor) = 'ptm'       AND LOWER("designPartner") = 'ptm')
+      OR (LOWER(subcontractor) = 'zte'       AND LOWER("designPartner") IN ('zte','alphatelecom'))
+      OR (LOWER(subcontractor) = 'denys'     AND LOWER("designPartner") = 'denys')
+      OR (LOWER(subcontractor) = 'apk'       AND LOWER("designPartner") = 'apk')
+      OR (LOWER(subcontractor) = 'constructel' AND LOWER("designPartner") IN ('constructel','visabeira'))
+      OR (LOWER(subcontractor) = 'fyber49'   AND LOWER("designPartner") = 'fyber49')
+      OR (LOWER(subcontractor) = 'besix'     AND LOWER("designPartner") IN ('besix','wkf','fifthnet'))
+      OR (LOWER(subcontractor) = 'hubicon'   AND LOWER("designPartner") IN ('hubicon','wkf'))
+      OR (LOWER(subcontractor) = 'a-net'     AND LOWER("designPartner") = 'a-net')
+      OR (LOWER(subcontractor) = 'circet'    AND LOWER("designPartner") IN ('circet','keen wise','heta'))
+    )
+  `
+
+  if (params.invalidCombo === '1') {
+    const engineerScope = (!isAdmin && params.mine === '1' && engineerId)
+      ? Prisma.sql`AND "engineerId" = ${engineerId}`
+      : Prisma.sql``
+    const invalidIds = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Ticket"
+      WHERE "isValidTicket" = true AND "archivedAt" IS NULL
+      ${engineerScope}
+      AND ${INVALID_COMBO_CONDITION}
+    `
+    where.id = { in: invalidIds.length > 0 ? invalidIds.map(r => r.id) : [''] }
+  }
+
+  const [tickets, total, partners, issueTopics, engineers, subcontractors, issueOther, canFixUnknown, partnerUnknown, invalidComboCountRaw] = await Promise.all([
     prisma.ticket.findMany({
       where,
       include: { engineer: { select: { name: true } } },
@@ -96,8 +130,15 @@ export default async function TicketsPage({
     prisma.ticket.count({ where: { ...myBase, issueTopic: 'Other' } }),
     prisma.ticket.count({ where: { ...myBase, canUserSolve: 'UNKNOWN' } }),
     prisma.ticket.count({ where: { ...myBase, OR: [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }] } }),
+    prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::bigint AS count FROM "Ticket"
+      WHERE "isValidTicket" = true AND "archivedAt" IS NULL
+      ${isAdmin ? Prisma.sql`` : Prisma.sql`AND "engineerId" = ${engineerId}`}
+      AND ${INVALID_COMBO_CONDITION}
+    `,
   ])
 
+  const invalidComboCount = Number(invalidComboCountRaw[0]?.count ?? 0)
   const totalPages = Math.ceil(total / perPage)
 
   return (
@@ -121,7 +162,7 @@ export default async function TicketsPage({
       </div>
 
       {/* Data quality quick-filters */}
-      {(issueOther > 0 || canFixUnknown > 0 || partnerUnknown > 0) && (
+      {(issueOther > 0 || canFixUnknown > 0 || partnerUnknown > 0 || invalidComboCount > 0) && (
         <div className="mb-4 p-3 rounded-lg flex flex-wrap gap-2 items-center" style={{ background: '#fef3c7', border: '1px solid #fde68a' }}>
           <span className="text-xs mr-1" style={{ color: '#92400e', fontWeight: 700 }}>Needs correction:</span>
           {issueOther > 0 && (
@@ -140,6 +181,12 @@ export default async function TicketsPage({
             <Link href="/tickets?partnerUnknown=1&mine=1" className="px-3 py-1 rounded-full text-xs font-semibold"
               style={{ background: params.partnerUnknown === '1' && params.mine === '1' ? '#d97706' : '#fff', color: params.partnerUnknown === '1' && params.mine === '1' ? '#fff' : '#92400e', border: '1px solid #f59e0b', textDecoration: 'none' }}>
               Partner / Subcontractor: Unknown ({partnerUnknown.toLocaleString()})
+            </Link>
+          )}
+          {invalidComboCount > 0 && (
+            <Link href="/tickets?invalidCombo=1&mine=1" className="px-3 py-1 rounded-full text-xs font-semibold"
+              style={{ background: params.invalidCombo === '1' && params.mine === '1' ? '#d97706' : '#fff', color: params.invalidCombo === '1' && params.mine === '1' ? '#fff' : '#92400e', border: '1px solid #f59e0b', textDecoration: 'none' }}>
+              Invalid subco/partner combo ({invalidComboCount.toLocaleString()})
             </Link>
           )}
         </div>
