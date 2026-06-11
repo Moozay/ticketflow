@@ -358,12 +358,12 @@ export default function InternalDashboardClient({ kpis, byStatus, bySubcontracto
   // ── Partners tab state ─────────────────────────────────────────────────────
   const [ptnFrom,    setPtnFrom]    = useState('')
   const [ptnTo,      setPtnTo]      = useState('')
-  const [ptnQuick,   setPtnQuick]   = useState('year')
+  const [ptnQuick,   setPtnQuick]   = useState('all')
   const [ptnData,    setPtnData]    = useState<PartnerData | null>(null)
   const [ptnLoading, setPtnLoading] = useState(false)
 
   useEffect(() => {
-    const { from, to } = getQuickRange('year')
+    const { from, to } = getQuickRange('all')
     setPtnFrom(from)
     setPtnTo(to)
   }, [])
