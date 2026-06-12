@@ -34,7 +34,7 @@ function Badge({ label, className }: { label: string; className: string }) {
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; issueTopic?: string; subcontractor?: string; partnerUnknown?: string; invalidCombo?: string; mine?: string; sort?: string; dir?: string; page?: string }>
+  searchParams: Promise<{ q?: string; status?: string; partner?: string; urgency?: string; canUserSolve?: string; engineerFilter?: string; subcontractor?: string; partnerUnknown?: string; invalidCombo?: string; mine?: string; sort?: string; dir?: string; page?: string }>
 }) {
   const params = await searchParams
   const session = await auth()
@@ -44,7 +44,7 @@ export default async function TicketsPage({
 
   // If engineer and no engineerFilter set, default to their own tickets
   const hasAnyFilter = !!(params.q || params.status || params.partner || params.urgency ||
-    params.canUserSolve || params.engineerFilter || params.issueTopic ||
+    params.canUserSolve || params.engineerFilter ||
     params.subcontractor || params.partnerUnknown || params.invalidCombo || params.sort)
   // 'all' = explicit "show all engineers"; undefined/absent = default to own for engineers
   const effectiveEngineerId = params.engineerFilter === 'all'
@@ -60,7 +60,7 @@ export default async function TicketsPage({
   const base = { isValidTicket: true, archivedAt: null }
   const myBase = isAdmin ? base : { ...base, engineerId }
   // When a correction filter is active and user is engineer, scope to their own tickets
-  const correctionActive = !!(params.issueTopic || params.canUserSolve || params.partnerUnknown || params.invalidCombo)
+  const correctionActive = !!(params.canUserSolve || params.partnerUnknown || params.invalidCombo)
   const where: any = { ...base, ...(correctionActive && !isAdmin && params.mine === '1' ? { engineerId } : {}) }
   if (params.q) {
     where.OR = [
@@ -75,7 +75,6 @@ export default async function TicketsPage({
   if (params.urgency) where.urgency = params.urgency
   if (params.canUserSolve) where.canUserSolve = params.canUserSolve
   if (effectiveEngineerId) where.engineerId = effectiveEngineerId
-  if (params.issueTopic) where.issueTopic = { contains: params.issueTopic, mode: 'insensitive' }
   if (params.subcontractor) where.subcontractor = params.subcontractor
   if (params.partnerUnknown) where.OR = [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }]
 
@@ -112,7 +111,7 @@ export default async function TicketsPage({
     where.id = { in: invalidIds.length > 0 ? invalidIds.map(r => r.id) : [''] }
   }
 
-  const [tickets, total, partners, issueTopics, engineers, subcontractors, issueOther, canFixUnknown, partnerUnknown, invalidComboCountRaw] = await Promise.all([
+  const [tickets, total, partners, issueTopics, engineers, subcontractors, canFixUnknown, partnerUnknown, invalidComboCountRaw] = await Promise.all([
     prisma.ticket.findMany({
       where,
       include: { engineer: { select: { name: true } } },
@@ -127,7 +126,6 @@ export default async function TicketsPage({
     prisma.issueTopic.findMany({ orderBy: { name: 'asc' }, select: { name: true } }),
     prisma.user.findMany({ where: { active: true, role: 'ENGINEER' }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),
     prisma.ticket.groupBy({ by: ['subcontractor'], where: { isValidTicket: true, archivedAt: null, subcontractor: { not: '' } }, _count: true, orderBy: { _count: { subcontractor: 'desc' } } }),
-    prisma.ticket.count({ where: { ...myBase, issueTopic: 'Other' } }),
     prisma.ticket.count({ where: { ...myBase, canUserSolve: 'UNKNOWN' } }),
     prisma.ticket.count({ where: { ...myBase, OR: [{ designPartner: 'Unknown' }, { subcontractor: 'Unknown' }] } }),
     prisma.$queryRaw<{ count: bigint }[]>`
@@ -162,15 +160,9 @@ export default async function TicketsPage({
       </div>
 
       {/* Data quality quick-filters */}
-      {(issueOther > 0 || canFixUnknown > 0 || partnerUnknown > 0 || invalidComboCount > 0) && (
+      {(canFixUnknown > 0 || partnerUnknown > 0 || invalidComboCount > 0) && (
         <div className="mb-4 p-3 rounded-lg flex flex-wrap gap-2 items-center" style={{ background: '#fef3c7', border: '1px solid #fde68a' }}>
           <span className="text-xs mr-1" style={{ color: '#92400e', fontWeight: 700 }}>Needs correction:</span>
-          {issueOther > 0 && (
-            <Link href="/tickets?issueTopic=Other&mine=1" className="px-3 py-1 rounded-full text-xs font-semibold"
-              style={{ background: params.issueTopic === 'Other' && params.mine === '1' ? '#d97706' : '#fff', color: params.issueTopic === 'Other' && params.mine === '1' ? '#fff' : '#92400e', border: '1px solid #f59e0b', textDecoration: 'none' }}>
-              Issue topic: Other ({issueOther.toLocaleString()})
-            </Link>
-          )}
           {canFixUnknown > 0 && (
             <Link href="/tickets?canUserSolve=UNKNOWN&mine=1" className="px-3 py-1 rounded-full text-xs font-semibold"
               style={{ background: params.canUserSolve === 'UNKNOWN' && params.mine === '1' ? '#d97706' : '#fff', color: params.canUserSolve === 'UNKNOWN' && params.mine === '1' ? '#fff' : '#92400e', border: '1px solid #f59e0b', textDecoration: 'none' }}>
@@ -193,14 +185,14 @@ export default async function TicketsPage({
       )}
 
       {/* Filters */}
-      <form key={[params.q, params.status, params.partner, params.urgency, params.canUserSolve, params.engineerFilter, params.issueTopic, params.subcontractor, params.partnerUnknown, params.sort, params.dir].join('|')} method="GET" className="mb-5 flex flex-col gap-2">
+      <form key={[params.q, params.status, params.partner, params.urgency, params.canUserSolve, params.engineerFilter, params.subcontractor, params.partnerUnknown, params.sort, params.dir].join('|')} method="GET" className="mb-5 flex flex-col gap-2">
         {/* Row 1 — search + actions */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-xs">
             <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--muted-foreground)' }}>
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input name="q" defaultValue={params.q} placeholder="Search tickets…"
+            <input name="q" defaultValue={params.q} placeholder="Search by ticket ID or pop zone…"
               className="w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none"
               style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)' }} />
           </div>
@@ -253,12 +245,6 @@ export default async function TicketsPage({
             <option value="YES">Yes</option>
             <option value="NO">No</option>
           </select>
-          <select name="issueTopic" defaultValue={params.issueTopic ?? ''}
-            className="px-3 py-2 rounded-lg text-sm outline-none"
-            style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
-            <option value="">All issue topics</option>
-            {issueTopics.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
-          </select>
           <select name="engineerFilter" defaultValue={effectiveEngineerId ?? ''}
             className="px-3 py-2 rounded-lg text-sm outline-none"
             style={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', colorScheme: 'light' }}>
@@ -277,7 +263,7 @@ export default async function TicketsPage({
                 { label: 'Ticket', key: 'ticketNumber' },
                 { label: 'Engineer', key: null },
                 { label: 'Partner', key: null },
-                { label: 'Issue Topic', key: null },
+                { label: 'Pop Zone', key: null },
                 { label: 'Status', key: null },
                 { label: 'Urgency', key: null },
                 { label: 'Start Date', key: 'startDate' },
@@ -315,10 +301,10 @@ export default async function TicketsPage({
                 <td className="px-4 py-3" style={{ color: 'var(--foreground)' }}>{t.engineer.name}</td>
                 <td className="px-4 py-3" style={{ color: 'var(--foreground)' }}>{t.designPartner}</td>
                 <td className="px-4 py-3">
-                  {t.issueTopic ? (
+                  {t.popZone ? (
                     <span className="text-xs px-2 py-0.5 rounded-md"
                       style={{ background: 'var(--accent-bg)', color: 'var(--accent-fg)' }}>
-                      {t.issueTopic}
+                      {t.popZone}
                     </span>
                   ) : <span style={{ color: 'var(--muted-foreground)' }}>—</span>}
                 </td>
